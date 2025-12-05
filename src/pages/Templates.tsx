@@ -77,6 +77,9 @@ interface DeliveryNoteData {
   driverDate: string;
   receivedByName: string;
   receivedByDate: string;
+  paidAmount: string;
+  approvalName: string;
+  approvalDate: string;
 }
 
 interface SavedDeliveryNote {
@@ -623,7 +626,10 @@ Date: [DATE]`,
     driverName: "",
     driverDate: "",
     receivedByName: "",
-    receivedByDate: ""
+    receivedByDate: "",
+    paidAmount: "",
+    approvalName: "",
+    approvalDate: ""
   });
   
   const [savedDeliveryNotes, setSavedDeliveryNotes] = useState<SavedDeliveryNote[]>(() => {
@@ -3109,6 +3115,42 @@ Date: [DATE]`,
                                 />
                               </div>
                               <div className="text-xs mt-2">(Signature Required)</div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-bold mb-2">Payment Details</h4>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Paid Amount:</span>
+                                <Input 
+                                  value={deliveryNoteData.paidAmount}
+                                  onChange={(e) => handleDeliveryNoteChange("paidAmount", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-bold mb-2">Approval</h4>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={deliveryNoteData.approvalName}
+                                  onChange={(e) => handleDeliveryNoteChange("approvalName", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  value={deliveryNoteData.approvalDate}
+                                  onChange={(e) => handleDeliveryNoteChange("approvalDate", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
