@@ -35,7 +35,7 @@ import { PrintUtils } from "@/utils/printUtils";
 interface Template {
   id: string;
   name: string;
-  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher";
+  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher" | "goods-received-note";
   description: string;
   content: string;
   lastModified: string;
@@ -223,6 +223,45 @@ interface ComplimentaryGoodsData {
   authorizedByName: string;
   authorizedByTitle: string;
   authorizedDate: string;
+}
+
+interface GRNItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  received: number;
+  remarks: string;
+}
+
+interface GRNData {
+  businessName: string;
+  businessAddress: string;
+  businessPhone: string;
+  businessEmail: string;
+  supplierName: string;
+  supplierAddress: string;
+  supplierPhone: string;
+  supplierEmail: string;
+  grnNumber: string;
+  date: string;
+  poNumber: string;
+  deliveryDate: string;
+  vehicle: string;
+  driver: string;
+  items: GRNItem[];
+  deliveryNotes: string;
+  totalItems: number;
+  totalQuantity: number;
+  totalPackages: number;
+  preparedByName: string;
+  preparedByDate: string;
+  driverName: string;
+  driverDate: string;
+  receivedByName: string;
+  receivedByDate: string;
+  checkedByName: string;
+  checkedByDate: string;
 }
 
 interface TemplatesProps {
@@ -594,6 +633,41 @@ Signature: _________________
 Date: [DATE]`,
       lastModified: "2023-08-15",
       isActive: false
+    },
+    {
+      id: "12",
+      name: "Goods Received Note",
+      type: "goods-received-note",
+      description: "Professional goods received note template for inventory management",
+      content: `GOODS RECEIVED NOTE
+GRN #[GRN_NUMBER]
+Date: [DATE]
+PO #: [PO_NUMBER]
+Vehicle: [VEHICLE_REGISTRATION]
+Driver: [DRIVER_NAME]
+
+From:
+[SUPPLIER_NAME]
+[SUPPLIER_ADDRESS]
+[SUPPLIER_PHONE]
+
+To:
+[BUSINESS_NAME]
+[BUSINESS_ADDRESS]
+[BUSINESS_PHONE]
+
+Items:
+[ITEM_LIST]
+
+Special Instructions:
+[SPECIAL_INSTRUCTIONS]
+
+Signature: _________________
+Date: [SIGNATURE_DATE]
+
+Thank you for your business!`,
+      lastModified: "2023-08-15",
+      isActive: false
     }
   ]);
   
@@ -778,6 +852,40 @@ Date: [DATE]`,
     authorizedDate: "12/5/2025"
   });
   
+  const [grnData, setGrnData] = useState<GRNData>({
+    businessName: "YOUR BUSINESS NAME",
+    businessAddress: "123 Business Street, City, Country",
+    businessPhone: "+1234567890",
+    businessEmail: "info@yourbusiness.com",
+    supplierName: "Supplier Name",
+    supplierAddress: "Supplier Address",
+    supplierPhone: "+1234567890",
+    supplierEmail: "supplier@example.com",
+    grnNumber: "GRN-001",
+    date: "11/30/2025",
+    poNumber: "PO-2024-001",
+    deliveryDate: "",
+    vehicle: "",
+    driver: "",
+    items: [
+      { id: "1", description: "Sample Product 1", quantity: 10, unit: "pcs", received: 10, remarks: "Good condition" },
+      { id: "2", description: "Sample Product 2", quantity: 5, unit: "boxes", received: 5, remarks: "Fragile" },
+      { id: "3", description: "Sample Product 3", quantity: 2, unit: "units", received: 2, remarks: "" }
+    ],
+    deliveryNotes: "Please handle with care. Fragile items included.\nSignature required upon delivery.",
+    totalItems: 3,
+    totalQuantity: 17,
+    totalPackages: 3,
+    preparedByName: "",
+    preparedByDate: "",
+    driverName: "",
+    driverDate: "",
+    receivedByName: "",
+    receivedByDate: "",
+    checkedByName: "",
+    checkedByDate: ""
+  });
+  
   // Get the next delivery note number from localStorage
   const getNextDeliveryNoteNumber = () => {
     const lastNumber = localStorage.getItem('lastDeliveryNoteNumber');
@@ -825,7 +933,7 @@ Date: [DATE]`,
 
   const handlePreviewTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
-    if (template && (template.type === "delivery-note" || template.type === "order-form" || template.type === "invoice" || template.type === "expense-voucher" || template.type === "salary-slip" || template.type === "complimentary-goods")) {
+    if (template && (template.type === "delivery-note" || template.type === "order-form" || template.type === "invoice" || template.type === "expense-voucher" || template.type === "salary-slip" || template.type === "complimentary-goods" || template.type === "goods-received-note")) {
       setViewingTemplate(templateId);
       setActiveTab("preview");
     } else {
@@ -1881,6 +1989,72 @@ Date: [DATE]`,
     }));
   };
   
+  // Handle GRN data changes
+  const handleGRNChange = (field: keyof GRNData, value: string) => {
+    setGrnData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
+  // Handle GRN item changes
+  const handleGRNItemChange = (itemId: string, field: keyof GRNItem, value: string | number) => {
+    setGrnData(prev => ({
+      ...prev,
+      items: prev.items.map(item => 
+        item.id === itemId ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+  
+  // Add new GRN item
+  const handleAddGRNItem = () => {
+    setGrnData(prev => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        {
+          id: Date.now().toString(),
+          description: "",
+          quantity: 0,
+          unit: "",
+          received: 0,
+          remarks: ""
+        }
+      ]
+    }));
+  };
+  
+  // Remove GRN item
+  const handleRemoveGRNItem = (itemId: string) => {
+    setGrnData(prev => ({
+      ...prev,
+      items: prev.items.filter(item => item.id !== itemId)
+    }));
+  };
+  
+  // Calculate GRN totals
+  const calculateGRNTotals = () => {
+    const totalItems = grnData.items.length;
+    const totalQuantity = grnData.items.reduce((sum, item) => sum + Number(item.received || 0), 0);
+    const totalPackages = grnData.items.reduce((count, item) => 
+      item.unit && item.received ? count + 1 : count, 0
+    );
+    
+    return { totalItems, totalQuantity, totalPackages };
+  };
+  
+  // Effect to update GRN totals when items change
+  useEffect(() => {
+    const totals = calculateGRNTotals();
+    setGrnData(prev => ({
+      ...prev,
+      totalItems: totals.totalItems,
+      totalQuantity: totals.totalQuantity,
+      totalPackages: totals.totalPackages
+    }));
+  }, [grnData.items]);
+  
   // Add new complimentary goods item
   const handleAddComplimentaryGoodsItem = () => {
     setComplimentaryGoodsData(prev => ({
@@ -2678,6 +2852,222 @@ Date: [DATE]`,
     }
   };
   
+  // Print GRN
+  const handlePrintGRN = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const totals = calculateGRNTotals();
+      
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Goods Received Note</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px;
+              font-size: 14px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .header h1 {
+              font-size: 24px;
+              margin: 0;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+            }
+            .grid-4 {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr 1fr;
+              gap: 10px;
+            }
+            .signatures {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 20px;
+              margin-top: 40px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .font-bold {
+              font-weight: bold;
+            }
+            .mt-4 {
+              margin-top: 20px;
+            }
+            .mb-2 {
+              margin-bottom: 10px;
+            }
+            .signature-line {
+              margin-top: 40px;
+              padding-top: 5px;
+              border-top: 1px solid #000;
+            }
+            .text-center {
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>GOODS RECEIVED NOTE</h1>
+          </div>
+          
+          <div class="grid">
+            <div>
+              <h2 class="font-bold">${grnData.businessName}</h2>
+              <p>${grnData.businessAddress}</p>
+              <p>Phone: ${grnData.businessPhone}</p>
+              <p>Email: ${grnData.businessEmail}</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold">FROM:</h3>
+              <p>${grnData.supplierName}</p>
+              <p>${grnData.supplierAddress}</p>
+              <p>Phone: ${grnData.supplierPhone}</p>
+              <p>Email: ${grnData.supplierEmail}</p>
+            </div>
+          </div>
+          
+          <div class="grid-4">
+            <div>
+              <p class="font-bold">GRN #:</p>
+              <p>${grnData.grnNumber}</p>
+            </div>
+            <div>
+              <p class="font-bold">Date:</p>
+              <p>${grnData.date}</p>
+            </div>
+            <div>
+              <p class="font-bold">PO #:</p>
+              <p>${grnData.poNumber}</p>
+            </div>
+            <div>
+              <p class="font-bold">Delivery Date:</p>
+              <p>${grnData.deliveryDate || '_________'}</p>
+            </div>
+            <div>
+              <p class="font-bold">Vehicle #:</p>
+              <p>${grnData.vehicle || '_________'}</p>
+            </div>
+            <div>
+              <p class="font-bold">Driver:</p>
+              <p>${grnData.driver || '_________'}</p>
+            </div>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">ITEMS RECEIVED:</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item Description</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                  <th>Received</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${grnData.items.map(item => `
+                  <tr>
+                    <td>${item.description}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.unit}</td>
+                    <td>${item.received}</td>
+                    <td>${item.remarks}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">DELIVERY NOTES:</h3>
+            <p>${grnData.deliveryNotes.replace(/\n/g, '<br>')}</p>
+          </div>
+          
+          <div class="grid-4">
+            <div>
+              <p class="font-bold">Total Items:</p>
+              <p>${totals.totalItems}</p>
+            </div>
+            <div>
+              <p class="font-bold">Total Quantity:</p>
+              <p>${totals.totalQuantity} units</p>
+            </div>
+            <div>
+              <p class="font-bold">Total Packages:</p>
+              <p>${totals.totalPackages}</p>
+            </div>
+          </div>
+          
+          <div class="signatures">
+            <div>
+              <h4 class="font-bold">Prepared By</h4>
+              <p>Name: ${grnData.preparedByName || '_________________'}</p>
+              <p>Date: ${grnData.preparedByDate || '_________'}</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold">Driver Signature</h4>
+              <p>Name: ${grnData.driverName || '_________________'}</p>
+              <p>Date: ${grnData.driverDate || '_________'}</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold">Received By</h4>
+              <p>Name: ${grnData.receivedByName || '_________________'}</p>
+              <p>Date: ${grnData.receivedByDate || '_________'}</p>
+              <p class="signature-line">(Signature Required)</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold">Checked By</h4>
+              <p>Name: ${grnData.checkedByName || '_________________'}</p>
+              <p>Date: ${grnData.checkedByDate || '_________'}</p>
+            </div>
+          </div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+  };
+  
   // Effect to recalculate complimentary goods totals when data changes
   useEffect(() => {
     calculateComplimentaryGoodsTotals();
@@ -2700,6 +3090,7 @@ Date: [DATE]`,
       case "salary-slip": return <FileUser className="h-5 w-5" />;
       case "complimentary-goods": return <Gift className="h-5 w-5" />;
       case "expense-voucher": return <Wallet className="h-5 w-5" />;
+      case "goods-received-note": return <FileCheck className="h-5 w-5" />;
       default: return <FileText className="h-5 w-5" />;
     }
   };
@@ -2741,7 +3132,9 @@ Date: [DATE]`,
                           ? "Salary Slip Preview" 
                           : currentTemplate?.type === "complimentary-goods" 
                             ? "Complimentary Goods Preview" 
-                            : "Delivery Note Preview")
+                            : currentTemplate?.type === "goods-received-note" 
+                              ? "Goods Received Note Preview" 
+                              : "Delivery Note Preview")
                   : viewingTemplate 
                     ? `Viewing Template: ${currentTemplate?.name || 'Template'}`
                     : selectedTemplate 
@@ -2780,7 +3173,7 @@ Date: [DATE]`,
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">
-                    {currentTemplate?.type === "order-form" ? "Purchase Order Preview" : currentTemplate?.type === "invoice" ? "Invoice Preview" : currentTemplate?.type === "expense-voucher" ? "Expense Voucher Preview" : currentTemplate?.type === "salary-slip" ? "Salary Slip Preview" : currentTemplate?.type === "complimentary-goods" ? "Complimentary Goods Preview" : "Delivery Note Preview"}
+                    {currentTemplate?.type === "order-form" ? "Purchase Order Preview" : currentTemplate?.type === "invoice" ? "Invoice Preview" : currentTemplate?.type === "expense-voucher" ? "Expense Voucher Preview" : currentTemplate?.type === "salary-slip" ? "Salary Slip Preview" : currentTemplate?.type === "complimentary-goods" ? "Complimentary Goods Preview" : currentTemplate?.type === "goods-received-note" ? "Goods Received Note Preview" : "Delivery Note Preview"}
                   </h3>
                   <div className="flex gap-2">
                     {currentTemplate?.type === "order-form" ? (
@@ -2815,6 +3208,14 @@ Date: [DATE]`,
                         onChange={(e) => handleComplimentaryGoodsChange("voucherNumber", e.target.value)}
                         className="w-48 h-10"
                       />
+                    ) : currentTemplate?.type === "goods-received-note" ? (
+                      <Input
+                        type="text"
+                        placeholder="GRN Number"
+                        value={grnData.grnNumber}
+                        onChange={(e) => handleGRNChange("grnNumber", e.target.value)}
+                        className="w-48 h-10"
+                      />
                     ) : (
                       <Input
                         type="text"
@@ -2833,6 +3234,8 @@ Date: [DATE]`,
                         alert(`Salary Slip for ${salarySlipData.employeeName} saved successfully!`);
                       } else if (currentTemplate?.type === "complimentary-goods") {
                         alert(`Complimentary Goods Voucher ${complimentaryGoodsData.voucherNumber} saved successfully!`);
+                      } else if (currentTemplate?.type === "goods-received-note") {
+                        alert(`Goods Received Note ${grnData.grnNumber} saved successfully!`);
                       } else {
                         handleSaveDeliveryNote();
                       }
@@ -2852,6 +3255,8 @@ Date: [DATE]`,
                         handlePrintSalarySlip();
                       } else if (currentTemplate?.type === "complimentary-goods") {
                         handlePrintComplimentaryGoods();
+                      } else if (currentTemplate?.type === "goods-received-note") {
+                        handlePrintGRN();
                       } else {
                         handlePrintDeliveryNote();
                       }
@@ -2963,6 +3368,10 @@ Date: [DATE]`,
                     ) : currentTemplate?.type === "invoice" ? (
                       <div className="text-center">
                         <h2 className="text-2xl font-bold">INVOICE</h2>
+                      </div>
+                    ) : currentTemplate?.type === "goods-received-note" ? (
+                      <div className="text-center">
+                        <h2 className="text-2xl font-bold">GOODS RECEIVED NOTE</h2>
                       </div>
                     ) : (
                       <div className="text-center">
@@ -3797,6 +4206,323 @@ Date: [DATE]`,
                           </div>
                         </div>
                       </div>
+                    ) : currentTemplate?.type === "goods-received-note" ? (
+                      // Goods Received Note Content
+                      <div className="space-y-6">
+                        {/* Business Info */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <h3 className="font-bold text-lg">
+                              <Input 
+                                value={grnData.businessName}
+                                onChange={(e) => handleGRNChange("businessName", e.target.value)}
+                                className="w-full h-8 p-1 text-lg font-bold"
+                              />
+                            </h3>
+                            <div className="mt-2">
+                              <Textarea 
+                                value={grnData.businessAddress}
+                                onChange={(e) => handleGRNChange("businessAddress", e.target.value)}
+                                className="w-full h-16 p-1 text-sm resize-none"
+                                placeholder="Business Address"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 text-sm mt-1">
+                              <span>Phone:</span>
+                              <Input 
+                                value={grnData.businessPhone}
+                                onChange={(e) => handleGRNChange("businessPhone", e.target.value)}
+                                className="w-auto h-6 p-1 text-sm"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span>Email:</span>
+                              <Input 
+                                value={grnData.businessEmail}
+                                onChange={(e) => handleGRNChange("businessEmail", e.target.value)}
+                                className="w-auto h-6 p-1 text-sm"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-bold">FROM:</h4>
+                            <Input 
+                              value={grnData.supplierName}
+                              onChange={(e) => handleGRNChange("supplierName", e.target.value)}
+                              className="w-full h-6 p-1 text-sm mb-1"
+                            />
+                            <Input 
+                              value={grnData.supplierAddress}
+                              onChange={(e) => handleGRNChange("supplierAddress", e.target.value)}
+                              className="w-full h-6 p-1 text-sm mb-1"
+                            />
+                            <div className="flex items-center gap-2 text-sm mt-1">
+                              <span>Phone:</span>
+                              <Input 
+                                value={grnData.supplierPhone}
+                                onChange={(e) => handleGRNChange("supplierPhone", e.target.value)}
+                                className="w-auto h-6 p-1 text-sm"
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span>Email:</span>
+                              <Input 
+                                value={grnData.supplierEmail}
+                                onChange={(e) => handleGRNChange("supplierEmail", e.target.value)}
+                                className="w-auto h-6 p-1 text-sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Document Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div>
+                            <div className="text-sm font-medium">GRN #:</div>
+                            <div className="text-sm">{grnData.grnNumber}</div>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Date:</div>
+                            <Input 
+                              value={grnData.date}
+                              onChange={(e) => handleGRNChange("date", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">PO #:</div>
+                            <Input 
+                              value={grnData.poNumber}
+                              onChange={(e) => handleGRNChange("poNumber", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Delivery Date:</div>
+                            <Input 
+                              value={grnData.deliveryDate}
+                              onChange={(e) => handleGRNChange("deliveryDate", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                              placeholder="_________"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Vehicle #:</div>
+                            <Input 
+                              value={grnData.vehicle}
+                              onChange={(e) => handleGRNChange("vehicle", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                              placeholder="_________"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Driver:</div>
+                            <Input 
+                              value={grnData.driver}
+                              onChange={(e) => handleGRNChange("driver", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                              placeholder="_________"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Items Table */}
+                        <div>
+                          <h4 className="font-bold mb-2">ITEMS RECEIVED:</h4>
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse border border-gray-300 text-sm">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="border border-gray-300 p-2 text-left">Item Description</th>
+                                  <th className="border border-gray-300 p-2 text-left">Quantity</th>
+                                  <th className="border border-gray-300 p-2 text-left">Unit</th>
+                                  <th className="border border-gray-300 p-2 text-left">Received</th>
+                                  <th className="border border-gray-300 p-2 text-left">Remarks</th>
+                                  <th className="border border-gray-300 p-2 text-left">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {grnData.items.map((item) => (
+                                  <tr key={item.id}>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        value={item.description}
+                                        onChange={(e) => handleGRNItemChange(item.id, "description", e.target.value)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        type="number"
+                                        value={item.quantity}
+                                        onChange={(e) => handleGRNItemChange(item.id, "quantity", parseFloat(e.target.value) || 0)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        value={item.unit}
+                                        onChange={(e) => handleGRNItemChange(item.id, "unit", e.target.value)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        type="number"
+                                        value={item.received}
+                                        onChange={(e) => handleGRNItemChange(item.id, "received", parseFloat(e.target.value) || 0)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        value={item.remarks}
+                                        onChange={(e) => handleGRNItemChange(item.id, "remarks", e.target.value)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Button 
+                                        onClick={() => handleRemoveGRNItem(item.id)}
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-6 px-2"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <Button 
+                            onClick={handleAddGRNItem}
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Item
+                          </Button>
+                        </div>
+                        
+                        {/* Document Notes */}
+                        <div>
+                          <h4 className="font-bold mb-2">DELIVERY NOTES:</h4>
+                          <Textarea 
+                            value={grnData.deliveryNotes}
+                            onChange={(e) => handleGRNChange("deliveryNotes", e.target.value)}
+                            className="w-full p-2 text-sm min-h-[80px]"
+                          />
+                        </div>
+                        
+                        {/* Totals */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="text-sm">
+                            <span className="font-bold">Total Items:</span> {grnData.totalItems}
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-bold">Total Quantity:</span> {grnData.totalQuantity} units
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-bold">Total Packages:</span> {grnData.totalPackages}
+                          </div>
+                        </div>
+                        
+                        {/* Signatures */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+                          <div>
+                            <h4 className="font-bold mb-2">Prepared By</h4>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={grnData.preparedByName}
+                                  onChange={(e) => handleGRNChange("preparedByName", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  value={grnData.preparedByDate}
+                                  onChange={(e) => handleGRNChange("preparedByDate", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-bold mb-2">Driver Signature</h4>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={grnData.driverName}
+                                  onChange={(e) => handleGRNChange("driverName", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  value={grnData.driverDate}
+                                  onChange={(e) => handleGRNChange("driverDate", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-bold mb-2">Received By</h4>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={grnData.receivedByName}
+                                  onChange={(e) => handleGRNChange("receivedByName", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  value={grnData.receivedByDate}
+                                  onChange={(e) => handleGRNChange("receivedByDate", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div className="text-xs mt-2">(Signature Required)</div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-bold mb-2">Checked By</h4>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={grnData.checkedByName}
+                                  onChange={(e) => handleGRNChange("checkedByName", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  value={grnData.checkedByDate}
+                                  onChange={(e) => handleGRNChange("checkedByDate", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     ) : (
                       // Delivery Note Content
                       <div className="space-y-6">
@@ -4184,6 +4910,7 @@ Date: [DATE]`,
                           <option value="salary-slip">Salary Slip</option>
                           <option value="complimentary-goods">Complimentary Goods</option>
                           <option value="expense-voucher">Expense Voucher</option>
+                          <option value="goods-received-note">Goods Received Note</option>
                         </select>
                       </div>
                     </div>
