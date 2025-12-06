@@ -2369,8 +2369,8 @@ Thank you for your business!`,
                     <td>${item.description}</td>
                     <td>${item.quantity}</td>
                     <td>${item.unit}</td>
-                    <td>TZS ${item.unitPrice.toFixed(2)}</td>
-                    <td>TZS ${item.total.toFixed(2)}</td>
+                    <td>TZS ${item.unitPrice.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>TZS ${item.total.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -2381,19 +2381,19 @@ Thank you for your business!`,
             <div>
               <div class="flex justify-between">
                 <span class="font-bold">SUBTOTAL</span>
-                <span>TZS ${totals.subtotal.toFixed(2)}</span>
+                <span>TZS ${totals.subtotal.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div class="flex justify-between">
                 <span class="font-bold">TAX (8.5%)</span>
-                <span>TZS ${totals.tax.toFixed(2)}</span>
+                <span>TZS ${totals.tax.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div class="flex justify-between">
                 <span class="font-bold">SHIPPING</span>
-                <span>TZS ${purchaseOrderData.shipping.toFixed(2)}</span>
+                <span>TZS ${purchaseOrderData.shipping.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div class="flex justify-between pt-2" style="border-top: 1px solid #000;">
                 <span class="font-bold">TOTAL</span>
-                <span class="font-bold">TZS ${totals.total.toFixed(2)}</span>
+                <span class="font-bold">TZS ${totals.total.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -2527,7 +2527,7 @@ Thank you for your business!`,
           <div class="text-center">
             <h2>${invoiceData.invoiceNumber}</h2>
             <p>AMOUNT DUE</p>
-            <h2 style="color: red;">TZS ${invoiceData.amountDue.toFixed(2)}</h2>
+            <h2 style="color: red;">TZS ${invoiceData.amountDue.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
             <p>Due: ${invoiceData.dueDate}</p>
           </div>
           
@@ -2585,8 +2585,8 @@ Thank you for your business!`,
                     <td>${item.description}</td>
                     <td>${item.quantity}</td>
                     <td>${item.unit}</td>
-                    <td>TZS ${item.rate.toFixed(2)}</td>
-                    <td>TZS ${(item.quantity * item.rate).toFixed(2)}</td>
+                    <td>TZS ${item.rate.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>TZS ${(item.quantity * item.rate).toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -2607,27 +2607,27 @@ Thank you for your business!`,
             <div>
               <div class="flex justify-between">
                 <span class="font-bold">Subtotal:</span>
-                <span>TZS ${totals.subtotal.toFixed(2)}</span>
+                <span>TZS ${totals.subtotal.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div class="flex justify-between">
                 <span class="font-bold">Discount:</span>
-                <span>TZS ${invoiceData.discount.toFixed(2)}</span>
+                <span>TZS ${invoiceData.discount.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div class="flex justify-between">
                 <span class="font-bold">Tax:</span>
-                <span>TZS ${invoiceData.tax.toFixed(2)}</span>
+                <span>TZS ${invoiceData.tax.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div class="flex justify-between pt-2" style="border-top: 1px solid #000;">
                 <span class="font-bold">TOTAL:</span>
-                <span class="font-bold">TZS ${totals.total.toFixed(2)}</span>
+                <span class="font-bold">TZS ${totals.total.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div class="flex justify-between">
                 <span class="font-bold">Amount Paid:</span>
-                <span>TZS ${invoiceData.amountPaid.toFixed(2)}</span>
+                <span>TZS ${invoiceData.amountPaid.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
               <div class="flex justify-between pt-2" style="border-top: 1px solid #000;">
                 <span class="font-bold">AMOUNT DUE:</span>
-                <span class="font-bold" style="color: red;">TZS ${totals.amountDue.toFixed(2)}</span>
+                <span class="font-bold" style="color: red;">TZS ${totals.amountDue.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             </div>
           </div>
@@ -2761,23 +2761,23 @@ Thank you for your business!`,
               <tbody>
                 <tr>
                   <td>Basic Salary</td>
-                  <td class="text-right">TZS ${salarySlipData.basicSalary.toFixed(2)}</td>
+                  <td class="text-right">TZS ${salarySlipData.basicSalary.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
                 <tr>
                   <td>Allowances</td>
-                  <td class="text-right">TZS ${salarySlipData.allowances.toFixed(2)}</td>
+                  <td class="text-right">TZS ${salarySlipData.allowances.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
                 <tr>
                   <td>Overtime</td>
-                  <td class="text-right">TZS ${salarySlipData.overtime.toFixed(2)}</td>
+                  <td class="text-right">TZS ${salarySlipData.overtime.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
                 <tr>
                   <td>Bonus</td>
-                  <td class="text-right">TZS ${salarySlipData.bonus.toFixed(2)}</td>
+                  <td class="text-right">TZS ${salarySlipData.bonus.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
                 <tr>
                   <td class="font-bold">Gross Pay</td>
-                  <td class="font-bold text-right">TZS ${totals.grossPay.toFixed(2)}</td>
+                  <td class="font-bold text-right">TZS ${totals.grossPay.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               </tbody>
             </table>
@@ -2795,19 +2795,19 @@ Thank you for your business!`,
               <tbody>
                 <tr>
                   <td>Tax</td>
-                  <td class="text-right">TZS ${salarySlipData.tax.toFixed(2)}</td>
+                  <td class="text-right">TZS ${salarySlipData.tax.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
                 <tr>
                   <td>Insurance</td>
-                  <td class="text-right">TZS ${salarySlipData.insurance.toFixed(2)}</td>
+                  <td class="text-right">TZS ${salarySlipData.insurance.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
                 <tr>
                   <td>Other</td>
-                  <td class="text-right">TZS ${salarySlipData.otherDeductions.toFixed(2)}</td>
+                  <td class="text-right">TZS ${salarySlipData.otherDeductions.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
                 <tr>
                   <td class="font-bold">Total Deductions</td>
-                  <td class="font-bold text-right">TZS ${totals.totalDeductions.toFixed(2)}</td>
+                  <td class="font-bold text-right">TZS ${totals.totalDeductions.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               </tbody>
             </table>
@@ -2815,7 +2815,7 @@ Thank you for your business!`,
           
           <div class="section">
             <h3 class="font-bold mb-2">NET PAY:</h3>
-            <h2 class="text-center" style="color: green;">TZS ${totals.netPay.toFixed(2)}</h2>
+            <h2 class="text-center" style="color: green;">TZS ${totals.netPay.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
           </div>
           
           <div class="signature-line text-center">
@@ -3145,8 +3145,8 @@ Thank you for your business!`,
                     <td>${item.quantity}</td>
                     <td>${item.unit}</td>
                     <td>${item.received}</td>
-                    <td>${item.rate.toFixed(2)}</td>
-                    <td>${item.amount.toFixed(2)}</td>
+                    <td>${item.rate.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td>${item.amount.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td>${item.remarks}</td>
                   </tr>
                 `).join('')}
@@ -3174,11 +3174,11 @@ Thank you for your business!`,
             </div>
             <div>
               <p class="font-bold">Total Amount:</p>
-              <p>TZS ${totals.totalAmount.toFixed(2)}</p>
+              <p>TZS ${totals.totalAmount.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div>
               <p class="font-bold">Amount Paid:</p>
-              <p>TZS ${grnData.amountPaid.toFixed(2)}</p>
+              <p>TZS ${grnData.amountPaid.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
             <div>
               <p class="font-bold">Paid By:</p>
@@ -3187,7 +3187,7 @@ Thank you for your business!`,
             </div>
             <div>
               <p class="font-bold">Balance:</p>
-              <p>TZS ${totals.balance.toFixed(2)}</p>
+              <p>TZS ${totals.balance.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
           </div>
           
@@ -3673,10 +3673,10 @@ Thank you for your business!`,
                                       {item.unit}
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.unitPrice.toFixed(2)}
+                                      {item.unitPrice.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.total.toFixed(2)}
+                                      {item.total.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                   </tr>
                                 ))}
@@ -3698,19 +3698,19 @@ Thank you for your business!`,
                         <div className="grid grid-cols-1 gap-2 max-w-xs ml-auto">
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">SUBTOTAL</span>
-                            <span>${calculatePurchaseOrderTotals().subtotal.toFixed(2)}</span>
+                            <span>${calculatePurchaseOrderTotals().subtotal.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">TAX (8.5%)</span>
-                            <span>${calculatePurchaseOrderTotals().tax.toFixed(2)}</span>
+                            <span>${calculatePurchaseOrderTotals().tax.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">SHIPPING</span>
-                            <span>${purchaseOrderData.shipping.toFixed(2)}</span>
+                            <span>${purchaseOrderData.shipping.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">TOTAL</span>
-                            <span className="font-bold">${calculatePurchaseOrderTotals().total.toFixed(2)}</span>
+                            <span className="font-bold">${calculatePurchaseOrderTotals().total.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                         </div>
                         
@@ -3932,7 +3932,7 @@ Thank you for your business!`,
                                       />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {(parseFloat(item.quantity.toString()) * parseFloat(item.rate.toString())).toFixed(2)}
+                                      {(parseFloat(item.quantity.toString()) * parseFloat(item.rate.toString())).toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                     <td className="border border-gray-300 p-2">
                                       <Button 
@@ -3984,7 +3984,7 @@ Thank you for your business!`,
                         <div className="grid grid-cols-1 gap-2 max-w-xs ml-auto">
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Subtotal:</span>
-                            <span>TZS {calculateInvoiceTotals().subtotal.toFixed(2)}</span>
+                            <span>TZS {calculateInvoiceTotals().subtotal.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Discount:</span>
@@ -4006,7 +4006,7 @@ Thank you for your business!`,
                           </div>
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">TOTAL:</span>
-                            <span className="font-bold">TZS {calculateInvoiceTotals().total.toFixed(2)}</span>
+                            <span className="font-bold">TZS {calculateInvoiceTotals().total.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Amount Paid:</span>
@@ -4019,7 +4019,7 @@ Thank you for your business!`,
                           </div>
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">AMOUNT DUE:</span>
-                            <span className="font-bold text-red-600">TZS {calculateInvoiceTotals().amountDue.toFixed(2)}</span>
+                            <span className="font-bold text-red-600">TZS {calculateInvoiceTotals().amountDue.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                         </div>
                         
@@ -4100,7 +4100,7 @@ Thank you for your business!`,
                                       {item.category}
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      TZS {item.amount.toFixed(2)}
+                                      TZS {item.amount.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                   </tr>
                                 ))}
@@ -4122,7 +4122,7 @@ Thank you for your business!`,
                         <div className="grid grid-cols-1 gap-2 max-w-xs ml-auto">
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">TOTAL AMOUNT:</span>
-                            <span className="font-bold">TZS {calculateExpenseVoucherTotals().totalAmount.toFixed(2)}</span>
+                            <span className="font-bold">TZS {calculateExpenseVoucherTotals().totalAmount.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                         </div>
                         
@@ -4206,23 +4206,23 @@ Thank you for your business!`,
                               <tbody>
                                 <tr>
                                   <td className="border border-gray-300 p-2">Basic Salary</td>
-                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.basicSalary.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.basicSalary.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                                 <tr>
                                   <td className="border border-gray-300 p-2">Allowances</td>
-                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.allowances.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.allowances.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                                 <tr>
                                   <td className="border border-gray-300 p-2">Overtime</td>
-                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.overtime.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.overtime.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                                 <tr>
                                   <td className="border border-gray-300 p-2">Bonus</td>
-                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.bonus.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.bonus.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                                 <tr className="bg-gray-50 font-bold">
                                   <td className="border border-gray-300 p-2">Gross Pay</td>
-                                  <td className="border border-gray-300 p-2 text-right">${calculateSalarySlipTotals().grossPay.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${calculateSalarySlipTotals().grossPay.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                               </tbody>
                             </table>
@@ -4243,19 +4243,19 @@ Thank you for your business!`,
                               <tbody>
                                 <tr>
                                   <td className="border border-gray-300 p-2">Tax</td>
-                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.tax.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.tax.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                                 <tr>
                                   <td className="border border-gray-300 p-2">Insurance</td>
-                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.insurance.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.insurance.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                                 <tr>
                                   <td className="border border-gray-300 p-2">Other Deductions</td>
-                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.otherDeductions.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${salarySlipData.otherDeductions.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                                 <tr className="bg-gray-50 font-bold">
                                   <td className="border border-gray-300 p-2">Total Deductions</td>
-                                  <td className="border border-gray-300 p-2 text-right">${calculateSalarySlipTotals().totalDeductions.toFixed(2)}</td>
+                                  <td className="border border-gray-300 p-2 text-right">${calculateSalarySlipTotals().totalDeductions.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                 </tr>
                               </tbody>
                             </table>
@@ -4266,7 +4266,7 @@ Thank you for your business!`,
                         <div className="grid grid-cols-1 gap-2 max-w-xs ml-auto">
                           <div className="flex justify-between text-lg pt-2 border-t border-gray-300">
                             <span className="font-bold">NET PAY:</span>
-                            <span className="font-bold text-green-600">${calculateSalarySlipTotals().netPay.toFixed(2)}</span>
+                            <span className="font-bold text-green-600">${calculateSalarySlipTotals().netPay.toLocaleString('en-TZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                           </div>
                         </div>
                         
