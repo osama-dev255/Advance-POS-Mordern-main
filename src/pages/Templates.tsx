@@ -256,6 +256,10 @@ interface GRNData {
   totalItems: number;
   totalQuantity: number;
   totalPackages: number;
+  amountPaid: number;
+  paidByName: string;
+  paidByDate: string;
+  balance: number;
   preparedByName: string;
   preparedByDate: string;
   driverName: string;
@@ -878,6 +882,10 @@ Thank you for your business!`,
     totalItems: 3,
     totalQuantity: 17,
     totalPackages: 3,
+    amountPaid: 0,
+    paidByName: "",
+    paidByDate: "",
+    balance: 0,
     preparedByName: "",
     preparedByDate: "",
     driverName: "",
@@ -887,6 +895,9 @@ Thank you for your business!`,
     checkedByName: "",
     checkedByDate: ""
   });
+
+  // State for saved GRNs
+  const [savedGRNs, setSavedGRNs] = useState<GRNData[]>([]);
   
   // Get the next delivery note number from localStorage
   const getNextDeliveryNoteNumber = () => {
@@ -1992,12 +2003,62 @@ Thank you for your business!`,
   };
   
   // Handle GRN data changes
-  const handleGRNChange = (field: keyof GRNData, value: string) => {
+  const handleGRNChange = (field: keyof GRNData, value: string | number) => {
     setGrnData(prev => ({
       ...prev,
       [field]: value
     }));
   };
+
+  // Save current GRN
+  const handleSaveGRN = () => {
+    // Check if GRN number already exists
+    const existingIndex = savedGRNs.findIndex(grn => grn.grnNumber === grnData.grnNumber);
+    
+    if (existingIndex >= 0) {
+      // Update existing GRN
+      const updatedGRNs = [...savedGRNs];
+      updatedGRNs[existingIndex] = {...grnData};
+      setSavedGRNs(updatedGRNs);
+      localStorage.setItem('savedGRNs', JSON.stringify(updatedGRNs));
+    } else {
+      // Add new GRN
+      const newGRNs = [...savedGRNs, {...grnData}];
+      setSavedGRNs(newGRNs);
+      localStorage.setItem('savedGRNs', JSON.stringify(newGRNs));
+    }
+    
+    alert(`Goods Received Note ${grnData.grnNumber} saved successfully!`);
+  };
+
+  // Load a saved GRN
+  const handleLoadGRN = (grn: GRNData) => {
+    setGrnData({...grn});
+  };
+
+  // Delete a saved GRN
+  const handleDeleteGRN = (grnNumber: string) => {
+    const confirmed = window.confirm(`Are you sure you want to delete GRN ${grnNumber}?`);
+    if (confirmed) {
+      const updatedGRNs = savedGRNs.filter(grn => grn.grnNumber !== grnNumber);
+      setSavedGRNs(updatedGRNs);
+      localStorage.setItem('savedGRNs', JSON.stringify(updatedGRNs));
+      alert(`Goods Received Note ${grnNumber} deleted successfully!`);
+    }
+  };
+
+  // Load saved GRNs from localStorage on component mount
+  useEffect(() => {
+    const saved = localStorage.getItem('savedGRNs');
+    if (saved) {
+      try {
+        const parsedGRNs = JSON.parse(saved);
+        setSavedGRNs(parsedGRNs);
+      } catch (e) {
+        console.error('Error parsing saved GRNs:', e);
+      }
+    }
+  }, []);
   
   // Handle GRN item changes
   const handleGRNItemChange = (itemId: string, field: keyof GRNItem, value: string | number) => {
@@ -2058,8 +2119,9 @@ Thank you for your business!`,
       item.unit && item.received ? count + 1 : count, 0
     );
     const totalAmount = grnData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const balance = totalAmount - Number(grnData.amountPaid || 0);
     
-    return { totalItems, totalQuantity, totalPackages, totalAmount };
+    return { totalItems, totalQuantity, totalPackages, totalAmount, balance };
   };
   
   // Effect to update GRN totals when items change
@@ -2069,9 +2131,10 @@ Thank you for your business!`,
       ...prev,
       totalItems: totals.totalItems,
       totalQuantity: totals.totalQuantity,
-      totalPackages: totals.totalPackages
+      totalPackages: totals.totalPackages,
+      balance: totals.balance
     }));
-  }, [grnData.items]);
+  }, [grnData.items, grnData.amountPaid]);
   
   // Add new complimentary goods item
   const handleAddComplimentaryGoodsItem = () => {
@@ -3046,6 +3109,23 @@ Thank you for your business!`,
               <p class="font-bold">Total Packages:</p>
               <p>${totals.totalPackages}</p>
             </div>
+            <div>
+              <p class="font-bold">Total Amount:</p>
+              <p>TZS ${totals.totalAmount.toFixed(2)}</p>
+            </div>
+            <div>
+              <p class="font-bold">Amount Paid:</p>
+              <p>TZS ${grnData.amountPaid.toFixed(2)}</p>
+            </div>
+            <div>
+              <p class="font-bold">Paid By:</p>
+              <p>Name: ${grnData.paidByName || '_________________'}</p>
+              <p>Date: ${grnData.paidByDate || '_________'}</p>
+            </div>
+            <div>
+              <p class="font-bold">Balance:</p>
+              <p>TZS ${totals.balance.toFixed(2)}</p>
+            </div>
           </div>
           
           <div class="signatures">
@@ -3257,7 +3337,7 @@ Thank you for your business!`,
                       } else if (currentTemplate?.type === "complimentary-goods") {
                         alert(`Complimentary Goods Voucher ${complimentaryGoodsData.voucherNumber} saved successfully!`);
                       } else if (currentTemplate?.type === "goods-received-note") {
-                        alert(`Goods Received Note ${grnData.grnNumber} saved successfully!`);
+                        handleSaveGRN();
                       } else {
                         handleSaveDeliveryNote();
                       }
@@ -3369,6 +3449,44 @@ Thank you for your business!`,
                             size="sm" 
                             variant="outline" 
                             onClick={() => handleDeleteSavedNote(note.id)}
+                            className="h-6 px-2"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Saved GRNs section - only show for goods received notes */}
+                {currentTemplate?.type === "goods-received-note" && savedGRNs.length > 0 && (
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-bold mb-2">Saved Goods Received Notes:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {savedGRNs.map((grn) => (
+                        <div key={grn.grnNumber} className="flex items-center gap-2 bg-gray-100 rounded p-2">
+                          <span className="text-sm">{grn.grnNumber}</span>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleLoadGRN(grn)}
+                            className="h-6 px-2"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleLoadGRN(grn)}
+                            className="h-6 px-2"
+                          >
+                            Load
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleDeleteGRN(grn.grnNumber)}
                             className="h-6 px-2"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -4472,6 +4590,39 @@ Thank you for your business!`,
                           </div>
                           <div className="text-sm">
                             <span className="font-bold">Total Amount:</span> TZS {calculateGRNTotals().totalAmount.toFixed(2)}
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-bold">Amount Paid:</span>
+                            <Input
+                              type="number"
+                              value={grnData.amountPaid || 0}
+                              onChange={(e) => handleGRNChange("amountPaid", parseFloat(e.target.value) || 0)}
+                              className="w-full h-6 p-1 text-sm mt-1"
+                            />
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-bold">Paid By:</span>
+                            <div className="space-y-1 mt-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs">Name:</span>
+                                <Input
+                                  value={grnData.paidByName}
+                                  onChange={(e) => handleGRNChange("paidByName", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs">Date:</span>
+                                <Input
+                                  value={grnData.paidByDate}
+                                  onChange={(e) => handleGRNChange("paidByDate", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-bold">Balance:</span> TZS {calculateGRNTotals().balance.toFixed(2)}
                           </div>
                         </div>
                         
