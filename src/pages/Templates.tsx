@@ -858,6 +858,25 @@ Thank you for your business!`,
     authorizedDate: "12/5/2025"
   });
   
+  // Get initial GRN number
+  const getInitialGRNNumber = () => {
+    const lastNumber = localStorage.getItem('lastGRNNumber');
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}`;
+    
+    let nextNumber = 1;
+    if (lastNumber) {
+      const [lastDate, lastSeq] = lastNumber.split('-');
+      if (lastDate === dateStr) {
+        nextNumber = parseInt(lastSeq) + 1;
+      }
+    }
+    
+    const newNumber = `${dateStr}-${nextNumber.toString().padStart(3, '0')}`;
+    localStorage.setItem('lastGRNNumber', newNumber);
+    return `GRN-${newNumber}`;
+  };
+
   const [grnData, setGrnData] = useState<GRNData>({
     businessName: "YOUR BUSINESS NAME",
     businessAddress: "123 Business Street, City, Country",
@@ -867,7 +886,7 @@ Thank you for your business!`,
     supplierAddress: "Supplier Address",
     supplierPhone: "+1234567890",
     supplierEmail: "supplier@example.com",
-    grnNumber: "GRN-001",
+    grnNumber: getInitialGRNNumber(),
     date: "11/30/2025",
     poNumber: "PO-2024-001",
     deliveryDate: "",
@@ -2010,6 +2029,25 @@ Thank you for your business!`,
     }));
   };
 
+  // Get the next GRN number
+  const getNextGRNNumber = () => {
+    const lastNumber = localStorage.getItem('lastGRNNumber');
+    const today = new Date();
+    const dateStr = `${today.getFullYear()}${(today.getMonth() + 1).toString().padStart(2, '0')}${today.getDate().toString().padStart(2, '0')}`;
+    
+    let nextNumber = 1;
+    if (lastNumber) {
+      const [lastDate, lastSeq] = lastNumber.split('-');
+      if (lastDate === dateStr) {
+        nextNumber = parseInt(lastSeq) + 1;
+      }
+    }
+    
+    const newNumber = `${dateStr}-${nextNumber.toString().padStart(3, '0')}`;
+    localStorage.setItem('lastGRNNumber', newNumber);
+    return `GRN-${newNumber}`;
+  };
+
   // Save current GRN
   const handleSaveGRN = () => {
     // Check if GRN number already exists
@@ -2026,6 +2064,13 @@ Thank you for your business!`,
       const newGRNs = [...savedGRNs, {...grnData}];
       setSavedGRNs(newGRNs);
       localStorage.setItem('savedGRNs', JSON.stringify(newGRNs));
+      
+      // Generate new GRN number for next use
+      const newGRNNumber = getNextGRNNumber();
+      setGrnData(prev => ({
+        ...prev,
+        grnNumber: newGRNNumber
+      }));
     }
     
     alert(`Goods Received Note ${grnData.grnNumber} saved successfully!`);
