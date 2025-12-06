@@ -231,6 +231,8 @@ interface GRNItem {
   quantity: number;
   unit: string;
   received: number;
+  rate: number;
+  amount: number;
   remarks: string;
 }
 
@@ -868,9 +870,9 @@ Thank you for your business!`,
     vehicle: "",
     driver: "",
     items: [
-      { id: "1", description: "Sample Product 1", quantity: 10, unit: "pcs", received: 10, remarks: "Good condition" },
-      { id: "2", description: "Sample Product 2", quantity: 5, unit: "boxes", received: 5, remarks: "Fragile" },
-      { id: "3", description: "Sample Product 3", quantity: 2, unit: "units", received: 2, remarks: "" }
+      { id: "1", description: "Sample Product 1", quantity: 10, unit: "pcs", received: 10, rate: 0, amount: 0, remarks: "Good condition" },
+      { id: "2", description: "Sample Product 2", quantity: 5, unit: "boxes", received: 5, rate: 0, amount: 0, remarks: "Fragile" },
+      { id: "3", description: "Sample Product 3", quantity: 2, unit: "units", received: 2, rate: 0, amount: 0, remarks: "" }
     ],
     deliveryNotes: "Please handle with care. Fragile items included.\nSignature required upon delivery.",
     totalItems: 3,
@@ -2001,9 +2003,22 @@ Thank you for your business!`,
   const handleGRNItemChange = (itemId: string, field: keyof GRNItem, value: string | number) => {
     setGrnData(prev => ({
       ...prev,
-      items: prev.items.map(item => 
-        item.id === itemId ? { ...item, [field]: value } : item
-      )
+      items: prev.items.map(item => {
+        // If changing quantity or rate, auto-calculate amount
+        if (item.id === itemId) {
+          const updatedItem = { ...item, [field]: value };
+          
+          // Auto-calculate amount when quantity or rate changes
+          if (field === "quantity" || field === "rate") {
+            const quantity = field === "quantity" ? Number(value) : Number(item.quantity);
+            const rate = field === "rate" ? Number(value) : Number(item.rate);
+            updatedItem.amount = quantity * rate;
+          }
+          
+          return updatedItem;
+        }
+        return item;
+      })
     }));
   };
   
@@ -2019,6 +2034,8 @@ Thank you for your business!`,
           quantity: 0,
           unit: "",
           received: 0,
+          rate: 0,
+          amount: 0,
           remarks: ""
         }
       ]
@@ -2040,8 +2057,9 @@ Thank you for your business!`,
     const totalPackages = grnData.items.reduce((count, item) => 
       item.unit && item.received ? count + 1 : count, 0
     );
+    const totalAmount = grnData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
     
-    return { totalItems, totalQuantity, totalPackages };
+    return { totalItems, totalQuantity, totalPackages, totalAmount };
   };
   
   // Effect to update GRN totals when items change
@@ -2989,6 +3007,8 @@ Thank you for your business!`,
                   <th>Quantity</th>
                   <th>Unit</th>
                   <th>Received</th>
+                  <th>Rate</th>
+                  <th>Amount</th>
                   <th>Remarks</th>
                 </tr>
               </thead>
@@ -2999,6 +3019,8 @@ Thank you for your business!`,
                     <td>${item.quantity}</td>
                     <td>${item.unit}</td>
                     <td>${item.received}</td>
+                    <td>${item.rate.toFixed(2)}</td>
+                    <td>${item.amount.toFixed(2)}</td>
                     <td>${item.remarks}</td>
                   </tr>
                 `).join('')}
@@ -4338,6 +4360,8 @@ Thank you for your business!`,
                                   <th className="border border-gray-300 p-2 text-left">Quantity</th>
                                   <th className="border border-gray-300 p-2 text-left">Unit</th>
                                   <th className="border border-gray-300 p-2 text-left">Received</th>
+                                  <th className="border border-gray-300 p-2 text-left">Rate</th>
+                                  <th className="border border-gray-300 p-2 text-left">Amount</th>
                                   <th className="border border-gray-300 p-2 text-left">Remarks</th>
                                   <th className="border border-gray-300 p-2 text-left">Actions</th>
                                 </tr>
@@ -4373,6 +4397,23 @@ Thank you for your business!`,
                                         value={item.received}
                                         onChange={(e) => handleGRNItemChange(item.id, "received", parseFloat(e.target.value) || 0)}
                                         className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        type="number"
+                                        value={item.rate}
+                                        onChange={(e) => handleGRNItemChange(item.id, "rate", parseFloat(e.target.value) || 0)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        type="number"
+                                        value={item.amount}
+                                        onChange={(e) => handleGRNItemChange(item.id, "amount", parseFloat(e.target.value) || 0)}
+                                        className="w-full h-6 p-1 text-sm"
+                                        readOnly
                                       />
                                     </td>
                                     <td className="border border-gray-300 p-2">
@@ -4419,7 +4460,7 @@ Thank you for your business!`,
                         </div>
                         
                         {/* Totals */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div className="text-sm">
                             <span className="font-bold">Total Items:</span> {grnData.totalItems}
                           </div>
@@ -4428,6 +4469,9 @@ Thank you for your business!`,
                           </div>
                           <div className="text-sm">
                             <span className="font-bold">Total Packages:</span> {grnData.totalPackages}
+                          </div>
+                          <div className="text-sm">
+                            <span className="font-bold">Total Amount:</span> TZS {calculateGRNTotals().totalAmount.toFixed(2)}
                           </div>
                         </div>
                         
