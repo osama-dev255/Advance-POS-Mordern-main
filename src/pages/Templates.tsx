@@ -1913,6 +1913,771 @@ Date: [DATE]`,
     return { totalItems, totalQuantity };
   };
   
+  // Print purchase order
+  const handlePrintPurchaseOrder = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const totals = calculatePurchaseOrderTotals();
+      
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Purchase Order</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px;
+              font-size: 14px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+              border-bottom: 2px solid #000;
+              padding-bottom: 10px;
+            }
+            .header h1 {
+              font-size: 24px;
+              margin: 0;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+            }
+            .grid-4 {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr 1fr;
+              gap: 10px;
+            }
+            .signatures {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 20px;
+              margin-top: 40px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .font-bold {
+              font-weight: bold;
+            }
+            .mt-4 {
+              margin-top: 20px;
+            }
+            .mb-2 {
+              margin-bottom: 10px;
+            }
+            .signature-line {
+              margin-top: 40px;
+              padding-top: 5px;
+              border-top: 1px solid #000;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>PURCHASE ORDER</h1>
+            <p>Official Business Document</p>
+          </div>
+          
+          <div class="grid">
+            <div>
+              <h3 class="font-bold mb-1">ORDER #</h3>
+              <p class="font-bold">${purchaseOrderData.poNumber}</p>
+              
+              <h3 class="font-bold mb-1 mt-4">FROM:</h3>
+              <p>${purchaseOrderData.businessName}</p>
+              <p>${purchaseOrderData.businessAddress}</p>
+              <p>Phone: ${purchaseOrderData.businessPhone}</p>
+              <p>Contact: ${purchaseOrderData.businessEmail}</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold mb-1">TO (Supplier):</h3>
+              <p>${purchaseOrderData.supplierName}</p>
+              <p>${purchaseOrderData.supplierAddress}</p>
+              <p>Phone: ${purchaseOrderData.supplierPhone}</p>
+              <p>Contact: ${purchaseOrderData.supplierEmail}</p>
+            </div>
+          </div>
+          
+          <div class="grid-4">
+            <div>
+              <p class="font-bold">DATE</p>
+              <p>${purchaseOrderData.date}</p>
+            </div>
+            <div>
+              <p class="font-bold">REQUIRED BY</p>
+              <p>${purchaseOrderData.expectedDelivery || '_________'}</p>
+            </div>
+            <div>
+              <p class="font-bold">PAYMENT TERMS</p>
+              <p>${purchaseOrderData.paymentTerms}</p>
+            </div>
+            <div>
+              <p class="font-bold">SHIP VIA</p>
+              <p>${purchaseOrderData.deliveryInstructions}</p>
+            </div>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">ITEMS ORDERED:</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item #</th>
+                  <th>Description</th>
+                  <th>Qty</th>
+                  <th>Unit</th>
+                  <th>Unit Price</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${purchaseOrderData.items.map((item, index) => `
+                  <tr>
+                    <td>ITM-${String(index + 1).padStart(3, '0')}</td>
+                    <td>${item.description}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.unit}</td>
+                    <td>TZS ${item.unitPrice.toFixed(2)}</td>
+                    <td>TZS ${item.total.toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="grid" style="max-width: 300px; margin-left: auto;">
+            <div>
+              <div class="flex justify-between">
+                <span class="font-bold">SUBTOTAL</span>
+                <span>TZS ${totals.subtotal.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-bold">TAX (8.5%)</span>
+                <span>TZS ${totals.tax.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-bold">SHIPPING</span>
+                <span>TZS ${purchaseOrderData.shipping.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between pt-2" style="border-top: 1px solid #000;">
+                <span class="font-bold">TOTAL</span>
+                <span class="font-bold">TZS ${totals.total.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">SPECIAL INSTRUCTIONS:</h3>
+            <p>${purchaseOrderData.notes}</p>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">APPROVAL:</h3>
+            <p>${purchaseOrderData.authorizedBySignature}</p>
+          </div>
+          
+          <div class="signatures">
+            <div>
+              <h4 class="font-bold mb-2">REQUESTED BY</h4>
+              <p class="signature-line">Name & Title</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold mb-2">APPROVED BY</h4>
+              <p class="signature-line">Name & Title</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold mb-2">DATE</h4>
+              <p class="signature-line">&nbsp;</p>
+            </div>
+          </div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+  };
+  
+  // Print invoice
+  const handlePrintInvoice = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const totals = calculateInvoiceTotals();
+      
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Invoice</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px;
+              font-size: 14px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .header h1 {
+              font-size: 24px;
+              margin: 0;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+            }
+            .grid-4 {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr 1fr;
+              gap: 10px;
+            }
+            .signatures {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 20px;
+              margin-top: 40px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .font-bold {
+              font-weight: bold;
+            }
+            .mt-4 {
+              margin-top: 20px;
+            }
+            .mb-2 {
+              margin-bottom: 10px;
+            }
+            .signature-line {
+              margin-top: 40px;
+              padding-top: 5px;
+              border-top: 1px solid #000;
+            }
+            .text-center {
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>INVOICE</h1>
+          </div>
+          
+          <div class="text-center">
+            <h2>${invoiceData.invoiceNumber}</h2>
+            <p>AMOUNT DUE</p>
+            <h2 style="color: red;">TZS ${invoiceData.amountDue.toFixed(2)}</h2>
+            <p>Due: ${invoiceData.dueDate}</p>
+          </div>
+          
+          <div class="grid">
+            <div>
+              <h3 class="font-bold mb-1">FROM:</h3>
+              <p>${invoiceData.businessName}</p>
+              <p>${invoiceData.businessAddress}</p>
+              <p>Phone: ${invoiceData.businessPhone}</p>
+              <p>Email: ${invoiceData.businessEmail}</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold mb-1">BILL TO:</h3>
+              <p>${invoiceData.clientName}</p>
+              <p>${invoiceData.clientAddress}</p>
+              <p>${invoiceData.clientCityState}</p>
+              <p>Phone: ${invoiceData.clientPhone}</p>
+              <p>Email: ${invoiceData.clientEmail}</p>
+            </div>
+          </div>
+          
+          <div class="grid-4">
+            <div>
+              <p class="font-bold">INVOICE DATE</p>
+              <p>${invoiceData.invoiceDate}</p>
+            </div>
+            <div>
+              <p class="font-bold">DUE DATE</p>
+              <p>${invoiceData.dueDate}</p>
+            </div>
+            <div>
+              <p class="font-bold">TERMS</p>
+              <p>${invoiceData.terms}</p>
+            </div>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">SERVICES RENDERED:</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Description</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                  <th>Rate</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${invoiceData.items.map((item, index) => `
+                  <tr>
+                    <td>${String(index + 1).padStart(3, '0')}</td>
+                    <td>${item.description}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.unit}</td>
+                    <td>TZS ${item.rate.toFixed(2)}</td>
+                    <td>TZS ${(item.quantity * item.rate).toFixed(2)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">NOTES:</h3>
+            <p>${invoiceData.notes}</p>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">PAYMENT OPTIONS:</h3>
+            <p>${invoiceData.paymentOptions}</p>
+          </div>
+          
+          <div class="grid" style="max-width: 300px; margin-left: auto;">
+            <div>
+              <div class="flex justify-between">
+                <span class="font-bold">Subtotal:</span>
+                <span>TZS ${totals.subtotal.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-bold">Discount:</span>
+                <span>TZS ${invoiceData.discount.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-bold">Tax:</span>
+                <span>TZS ${invoiceData.tax.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between pt-2" style="border-top: 1px solid #000;">
+                <span class="font-bold">TOTAL:</span>
+                <span class="font-bold">TZS ${totals.total.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-bold">Amount Paid:</span>
+                <span>TZS ${invoiceData.amountPaid.toFixed(2)}</span>
+              </div>
+              <div class="flex justify-between pt-2" style="border-top: 1px solid #000;">
+                <span class="font-bold">AMOUNT DUE:</span>
+                <span class="font-bold" style="color: red;">TZS ${totals.amountDue.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4 pt-4" style="border-top: 1px solid #000;">
+            <p>${invoiceData.notes}</p>
+            <p class="mt-2">Please make checks payable to ${invoiceData.businessName}</p>
+          </div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+  };
+  
+  // Print salary slip
+  const handlePrintSalarySlip = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const totals = calculateSalarySlipTotals();
+      
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Salary Slip</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px;
+              font-size: 14px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .header h1 {
+              font-size: 24px;
+              margin: 0;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+            }
+            .grid-3 {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 20px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .font-bold {
+              font-weight: bold;
+            }
+            .mt-4 {
+              margin-top: 20px;
+            }
+            .mb-2 {
+              margin-bottom: 10px;
+            }
+            .signature-line {
+              margin-top: 40px;
+              padding-top: 5px;
+              border-top: 1px solid #000;
+            }
+            .text-center {
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>SALARY SLIP</h1>
+            <p>Pay Period: ${salarySlipData.payPeriod}</p>
+          </div>
+          
+          <div class="grid">
+            <div>
+              <h3 class="font-bold mb-2">EMPLOYEE INFORMATION:</h3>
+              <p>Name: ${salarySlipData.employeeName}</p>
+              <p>Employee ID: ${salarySlipData.employeeId}</p>
+              <p>Department: ${salarySlipData.department}</p>
+              <p>Position: ${salarySlipData.position}</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold mb-2">PAYMENT DETAILS:</h3>
+              <p>Payment Method: ${salarySlipData.paymentMethod}</p>
+              <p>Bank: ${salarySlipData.bankName}</p>
+              <p>Account #: ${salarySlipData.accountNumber}</p>
+              <p>Paid Date: ${salarySlipData.paidDate}</p>
+            </div>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">EARNINGS:</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Basic Salary</td>
+                  <td class="text-right">TZS ${salarySlipData.basicSalary.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td>Allowances</td>
+                  <td class="text-right">TZS ${salarySlipData.allowances.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td>Overtime</td>
+                  <td class="text-right">TZS ${salarySlipData.overtime.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td>Bonus</td>
+                  <td class="text-right">TZS ${salarySlipData.bonus.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td class="font-bold">Gross Pay</td>
+                  <td class="font-bold text-right">TZS ${totals.grossPay.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">DEDUCTIONS:</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Tax</td>
+                  <td class="text-right">TZS ${salarySlipData.tax.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td>Insurance</td>
+                  <td class="text-right">TZS ${salarySlipData.insurance.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td>Other</td>
+                  <td class="text-right">TZS ${salarySlipData.otherDeductions.toFixed(2)}</td>
+                </tr>
+                <tr>
+                  <td class="font-bold">Total Deductions</td>
+                  <td class="font-bold text-right">TZS ${totals.totalDeductions.toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">NET PAY:</h3>
+            <h2 class="text-center" style="color: green;">TZS ${totals.netPay.toFixed(2)}</h2>
+          </div>
+          
+          <div class="signature-line text-center">
+            Authorized Signature
+          </div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+  };
+  
+  // Print complimentary goods
+  const handlePrintComplimentaryGoods = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const totals = calculateComplimentaryGoodsTotals();
+      
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Complimentary Goods Voucher</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px;
+              font-size: 14px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .header h1 {
+              font-size: 24px;
+              margin: 0;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .font-bold {
+              font-weight: bold;
+            }
+            .mt-4 {
+              margin-top: 20px;
+            }
+            .mb-2 {
+              margin-bottom: 10px;
+            }
+            .signature-line {
+              margin-top: 40px;
+              padding-top: 5px;
+              border-top: 1px solid #000;
+            }
+            .text-center {
+              text-align: center;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>COMPLIMENTARY GOODS VOUCHER</h1>
+            <h2>${complimentaryGoodsData.voucherNumber}</h2>
+            <p>Date: ${complimentaryGoodsData.date}</p>
+          </div>
+          
+          <div class="grid">
+            <div>
+              <h3 class="font-bold mb-2">CUSTOMER INFORMATION:</h3>
+              <p>Name: ${complimentaryGoodsData.customerName}</p>
+              <p>Address: ${complimentaryGoodsData.customerAddress}</p>
+              <p>Phone: ${complimentaryGoodsData.customerPhone}</p>
+              <p>Email: ${complimentaryGoodsData.customerEmail}</p>
+            </div>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">REASON FOR COMPLIMENTARY GOODS:</h3>
+            <p>${complimentaryGoodsData.reason}</p>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">ITEMS:</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Quantity</th>
+                  <th>Unit</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${complimentaryGoodsData.items.map(item => `
+                  <tr>
+                    <td>${item.description}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.unit}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="grid" style="max-width: 300px;">
+            <div>
+              <div class="flex justify-between">
+                <span class="font-bold">Total Items:</span>
+                <span>${totals.totalItems}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="font-bold">Total Quantity:</span>
+                <span>${totals.totalQuantity} units</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid">
+            <div>
+              <h3 class="font-bold mb-2">AUTHORIZED BY:</h3>
+              <p>Name: ${complimentaryGoodsData.authorizedByName}</p>
+              <p>Title: ${complimentaryGoodsData.authorizedByTitle}</p>
+              <p>Date: ${complimentaryGoodsData.authorizedDate}</p>
+            </div>
+          </div>
+          
+          <div class="signature-line text-center">
+            Authorized Signature
+          </div>
+          
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+    }
+  };
+  
   // Effect to recalculate complimentary goods totals when data changes
   useEffect(() => {
     calculateComplimentaryGoodsTotals();
@@ -2080,13 +2845,13 @@ Date: [DATE]`,
                     </Button>
                     <Button onClick={() => {
                       if (currentTemplate?.type === "order-form") {
-                        window.print();
+                        handlePrintPurchaseOrder();
                       } else if (currentTemplate?.type === "invoice") {
-                        window.print();
+                        handlePrintInvoice();
                       } else if (currentTemplate?.type === "salary-slip") {
-                        window.print();
+                        handlePrintSalarySlip();
                       } else if (currentTemplate?.type === "complimentary-goods") {
-                        window.print();
+                        handlePrintComplimentaryGoods();
                       } else {
                         handlePrintDeliveryNote();
                       }
@@ -2194,6 +2959,10 @@ Date: [DATE]`,
                       <div className="text-center border-b-2 border-gray-800 pb-2">
                         <h2 className="text-2xl font-bold">PURCHASE ORDER</h2>
                         <p className="text-sm">Official Business Document</p>
+                      </div>
+                    ) : currentTemplate?.type === "invoice" ? (
+                      <div className="text-center">
+                        <h2 className="text-2xl font-bold">INVOICE</h2>
                       </div>
                     ) : (
                       <div className="text-center">
@@ -2385,41 +3154,87 @@ Date: [DATE]`,
                       <div className="space-y-6">
                         {/* Header with Amount Due */}
                         <div className="text-center">
-                          <h2 className="text-2xl font-bold">INVOICE</h2>
-                          <div className="text-xl font-bold mt-2">{invoiceData.invoiceNumber}</div>
+                          <Input 
+                            value={invoiceData.invoiceNumber}
+                            onChange={(e) => handleInvoiceChange("invoiceNumber", e.target.value)}
+                            className="text-xl font-bold mt-2 w-full text-center"
+                          />
                           <div className="text-sm mt-1">AMOUNT DUE</div>
-                          <div className="text-2xl font-bold text-red-600 mt-1">${invoiceData.amountDue.toFixed(2)}</div>
-                          <div className="text-sm mt-1">Due: {invoiceData.dueDate}</div>
+                          <div className="text-2xl font-bold text-red-600 mt-1">TZS {invoiceData.amountDue.toFixed(2)}</div>
+                          <div className="text-sm mt-1 flex items-center justify-center gap-2">
+                            <span>Due:</span>
+                            <Input 
+                              value={invoiceData.dueDate}
+                              onChange={(e) => handleInvoiceChange("dueDate", e.target.value)}
+                              className="w-32"
+                            />
+                          </div>
                         </div>
                         
                         {/* Business and Client Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div>
                             <div className="font-bold mb-1">FROM:</div>
-                            <div className="text-sm mb-1">{invoiceData.businessName}</div>
-                            <div className="text-sm mb-1">{invoiceData.businessAddress}</div>
+                            <Input 
+                              value={invoiceData.businessName}
+                              onChange={(e) => handleInvoiceChange("businessName", e.target.value)}
+                              className="text-sm mb-1 w-full"
+                            />
+                            <Input 
+                              value={invoiceData.businessAddress}
+                              onChange={(e) => handleInvoiceChange("businessAddress", e.target.value)}
+                              className="text-sm mb-1 w-full"
+                            />
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <span>Phone:</span>
-                              <span>{invoiceData.businessPhone}</span>
+                              <Input 
+                                value={invoiceData.businessPhone}
+                                onChange={(e) => handleInvoiceChange("businessPhone", e.target.value)}
+                                className="w-full"
+                              />
                             </div>
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <span>Email:</span>
-                              <span>{invoiceData.businessEmail}</span>
+                              <Input 
+                                value={invoiceData.businessEmail}
+                                onChange={(e) => handleInvoiceChange("businessEmail", e.target.value)}
+                                className="w-full"
+                              />
                             </div>
                           </div>
                           
                           <div>
                             <div className="font-bold mb-1">BILL TO:</div>
-                            <div className="text-sm mb-1">{invoiceData.clientName}</div>
-                            <div className="text-sm mb-1">{invoiceData.clientAddress}</div>
-                            <div className="text-sm mb-1">{invoiceData.clientCityState}</div>
+                            <Input 
+                              value={invoiceData.clientName}
+                              onChange={(e) => handleInvoiceChange("clientName", e.target.value)}
+                              className="text-sm mb-1 w-full"
+                            />
+                            <Input 
+                              value={invoiceData.clientAddress}
+                              onChange={(e) => handleInvoiceChange("clientAddress", e.target.value)}
+                              className="text-sm mb-1 w-full"
+                            />
+                            <Input 
+                              value={invoiceData.clientCityState}
+                              onChange={(e) => handleInvoiceChange("clientCityState", e.target.value)}
+                              className="text-sm mb-1 w-full"
+                            />
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <span>Phone:</span>
-                              <span>{invoiceData.clientPhone}</span>
+                              <Input 
+                                value={invoiceData.clientPhone}
+                                onChange={(e) => handleInvoiceChange("clientPhone", e.target.value)}
+                                className="w-full"
+                              />
                             </div>
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <span>Email:</span>
-                              <span>{invoiceData.clientEmail}</span>
+                              <Input 
+                                value={invoiceData.clientEmail}
+                                onChange={(e) => handleInvoiceChange("clientEmail", e.target.value)}
+                                className="w-full"
+                              />
                             </div>
                           </div>
                         </div>
@@ -2428,15 +3243,27 @@ Date: [DATE]`,
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div>
                             <div className="text-sm font-medium">INVOICE DATE</div>
-                            <div className="text-sm">{invoiceData.invoiceDate}</div>
+                            <Input 
+                              value={invoiceData.invoiceDate}
+                              onChange={(e) => handleInvoiceChange("invoiceDate", e.target.value)}
+                              className="text-sm w-full"
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-medium">DUE DATE</div>
-                            <div className="text-sm">{invoiceData.dueDate}</div>
+                            <Input 
+                              value={invoiceData.dueDate}
+                              onChange={(e) => handleInvoiceChange("dueDate", e.target.value)}
+                              className="text-sm w-full"
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-medium">TERMS</div>
-                            <div className="text-sm">{invoiceData.terms}</div>
+                            <Input 
+                              value={invoiceData.terms}
+                              onChange={(e) => handleInvoiceChange("terms", e.target.value)}
+                              className="text-sm w-full"
+                            />
                           </div>
                         </div>
                         
@@ -2453,6 +3280,7 @@ Date: [DATE]`,
                                   <th className="border border-gray-300 p-2 text-left">Unit</th>
                                   <th className="border border-gray-300 p-2 text-left">Rate</th>
                                   <th className="border border-gray-300 p-2 text-left">Amount</th>
+                                  <th className="border border-gray-300 p-2 text-left">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2462,19 +3290,47 @@ Date: [DATE]`,
                                       {String(index + 1).padStart(3, '0')}
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.description}
+                                      <Input 
+                                        value={item.description}
+                                        onChange={(e) => handleInvoiceItemChange(item.id, "description", e.target.value)}
+                                        className="w-full"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.quantity}
+                                      <Input 
+                                        type="number"
+                                        value={item.quantity}
+                                        onChange={(e) => handleInvoiceItemChange(item.id, "quantity", parseFloat(e.target.value) || 0)}
+                                        className="w-full"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.unit}
+                                      <Input 
+                                        value={item.unit}
+                                        onChange={(e) => handleInvoiceItemChange(item.id, "unit", e.target.value)}
+                                        className="w-full"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.rate.toFixed(2)}
+                                      <Input 
+                                        type="number"
+                                        value={item.rate}
+                                        onChange={(e) => handleInvoiceItemChange(item.id, "rate", parseFloat(e.target.value) || 0)}
+                                        className="w-full"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.amount.toFixed(2)}
+                                      {(parseFloat(item.quantity.toString()) * parseFloat(item.rate.toString())).toFixed(2)}
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Button 
+                                        variant="destructive" 
+                                        size="sm" 
+                                        onClick={() => handleRemoveInvoiceItem(item.id)}
+                                        className="p-1 h-6 w-6 flex items-center justify-center"
+                                      >
+                                        -
+                                      </Button>
                                     </td>
                                   </tr>
                                 ))}
@@ -2495,51 +3351,81 @@ Date: [DATE]`,
                         {/* Notes */}
                         <div>
                           <div className="font-bold mb-2">NOTES:</div>
-                          <div className="text-sm min-h-[40px]">
-                            {invoiceData.notes}
-                          </div>
+                          <textarea 
+                            value={invoiceData.notes}
+                            onChange={(e) => handleInvoiceChange("notes", e.target.value)}
+                            className="text-sm min-h-[40px] w-full p-2 border border-gray-300 rounded"
+                          />
                         </div>
                         
                         {/* Payment Options */}
                         <div>
                           <div className="font-bold mb-2">PAYMENT OPTIONS:</div>
-                          <div className="text-sm min-h-[40px]">
-                            {invoiceData.paymentOptions}
-                          </div>
+                          <textarea 
+                            value={invoiceData.paymentOptions}
+                            onChange={(e) => handleInvoiceChange("paymentOptions", e.target.value)}
+                            className="text-sm min-h-[40px] w-full p-2 border border-gray-300 rounded"
+                          />
                         </div>
                         
                         {/* Financial Summary */}
                         <div className="grid grid-cols-1 gap-2 max-w-xs ml-auto">
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Subtotal:</span>
-                            <span>${calculateInvoiceTotals().subtotal.toFixed(2)}</span>
+                            <span>TZS {calculateInvoiceTotals().subtotal.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Discount:</span>
-                            <span>${invoiceData.discount.toFixed(2)}</span>
+                            <Input 
+                              type="number"
+                              value={invoiceData.discount || 0}
+                              onChange={(e) => handleInvoiceChange("discount", parseFloat(e.target.value) || 0)}
+                              className="w-24 text-right"
+                            />
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Tax:</span>
-                            <span>${invoiceData.tax.toFixed(2)}</span>
+                            <Input 
+                              type="number"
+                              value={invoiceData.tax || 0}
+                              onChange={(e) => handleInvoiceChange("tax", parseFloat(e.target.value) || 0)}
+                              className="w-24 text-right"
+                            />
                           </div>
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">TOTAL:</span>
-                            <span className="font-bold">${calculateInvoiceTotals().total.toFixed(2)}</span>
+                            <span className="font-bold">TZS {calculateInvoiceTotals().total.toFixed(2)}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Amount Paid:</span>
-                            <span>${invoiceData.amountPaid.toFixed(2)}</span>
+                            <Input 
+                              type="number"
+                              value={invoiceData.amountPaid || 0}
+                              onChange={(e) => handleInvoiceChange("amountPaid", parseFloat(e.target.value) || 0)}
+                              className="w-24 text-right"
+                            />
                           </div>
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">AMOUNT DUE:</span>
-                            <span className="font-bold text-red-600">${calculateInvoiceTotals().amountDue.toFixed(2)}</span>
+                            <span className="font-bold text-red-600">TZS {calculateInvoiceTotals().amountDue.toFixed(2)}</span>
                           </div>
                         </div>
                         
                         {/* Footer Note */}
                         <div className="text-center text-sm mt-4 pt-4 border-t border-gray-300">
-                          <div>{invoiceData.notes}</div>
-                          <div className="mt-2">Please make checks payable to {invoiceData.businessName}</div>
+                          <textarea 
+                            value={invoiceData.notes}
+                            onChange={(e) => handleInvoiceChange("notes", e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded mb-2"
+                            rows={3}
+                          />
+                          <div className="mt-2">Please make checks payable to 
+                            <Input 
+                              value={invoiceData.businessName}
+                              onChange={(e) => handleInvoiceChange("businessName", e.target.value)}
+                              className="inline-block w-auto ml-1"
+                            />
+                          </div>
                         </div>
                       </div>
                     ) : currentTemplate?.type === "expense-voucher" ? (
@@ -2602,7 +3488,7 @@ Date: [DATE]`,
                                       {item.category}
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      ${item.amount.toFixed(2)}
+                                      TZS {item.amount.toFixed(2)}
                                     </td>
                                   </tr>
                                 ))}
@@ -2624,7 +3510,7 @@ Date: [DATE]`,
                         <div className="grid grid-cols-1 gap-2 max-w-xs ml-auto">
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">TOTAL AMOUNT:</span>
-                            <span className="font-bold">${calculateExpenseVoucherTotals().totalAmount.toFixed(2)}</span>
+                            <span className="font-bold">TZS {calculateExpenseVoucherTotals().totalAmount.toFixed(2)}</span>
                           </div>
                         </div>
                         
