@@ -1306,7 +1306,7 @@ Date: [DATE]`,
             }
             .signatures {
               display: grid;
-              grid-template-columns: 1fr 1fr 1fr;
+              grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
               gap: 20px;
               margin-top: 40px;
             }
@@ -1452,6 +1452,17 @@ Date: [DATE]`,
               <p>Name: ${deliveryNoteData.receivedByName || '_________________'}</p>
               <p>Date: ${deliveryNoteData.receivedByDate || '_________'}</p>
               <p class="signature-line">(Signature Required)</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold">Payment Details</h4>
+              <p>Paid Amount: ${deliveryNoteData.paidAmount || '0.00'}</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold">Approval</h4>
+              <p>Name: ${deliveryNoteData.approvalName || '_________________'}</p>
+              <p>Date: ${deliveryNoteData.approvalDate || '_________'}</p>
             </div>
           </div>
           
