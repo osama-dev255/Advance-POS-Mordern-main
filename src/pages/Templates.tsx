@@ -238,10 +238,16 @@ interface GRNItem {
 
 interface GRNData {
   businessName: string;
+  businessTinName: string;
+  businessTinNumber: string;
+  businessVrnNumber: string;
   businessAddress: string;
   businessPhone: string;
   businessEmail: string;
   supplierName: string;
+  supplierTinName: string;
+  supplierTinNumber: string;
+  supplierVrnNumber: string;
   supplierAddress: string;
   supplierPhone: string;
   supplierEmail: string;
@@ -879,10 +885,16 @@ Thank you for your business!`,
 
   const [grnData, setGrnData] = useState<GRNData>({
     businessName: "YOUR BUSINESS NAME",
+    businessTinName: "",
+    businessTinNumber: "",
+    businessVrnNumber: "",
     businessAddress: "123 Business Street, City, Country",
     businessPhone: "+1234567890",
     businessEmail: "info@yourbusiness.com",
     supplierName: "Supplier Name",
+    supplierTinName: "",
+    supplierTinNumber: "",
+    supplierVrnNumber: "",
     supplierAddress: "Supplier Address",
     supplierPhone: "+1234567890",
     supplierEmail: "supplier@example.com",
@@ -3065,6 +3077,9 @@ Thank you for your business!`,
           <div class="grid">
             <div>
               <h2 class="font-bold">${grnData.businessName}</h2>
+              <p>${grnData.businessTinName ? 'TIN Name: ' + grnData.businessTinName : ''}</p>
+              <p>${grnData.businessTinNumber ? 'TIN Number: ' + grnData.businessTinNumber : ''}</p>
+              <p>${grnData.businessVrnNumber ? 'VRN No.: ' + grnData.businessVrnNumber : ''}</p>
               <p>${grnData.businessAddress}</p>
               <p>Phone: ${grnData.businessPhone}</p>
               <p>Email: ${grnData.businessEmail}</p>
@@ -3073,6 +3088,9 @@ Thank you for your business!`,
             <div>
               <h3 class="font-bold">FROM:</h3>
               <p>${grnData.supplierName}</p>
+              <p>${grnData.supplierTinName ? 'TIN Name: ' + grnData.supplierTinName : ''}</p>
+              <p>${grnData.supplierTinNumber ? 'TIN Number: ' + grnData.supplierTinNumber : ''}</p>
+              <p>${grnData.supplierVrnNumber ? 'VRN No.: ' + grnData.supplierVrnNumber : ''}</p>
               <p>${grnData.supplierAddress}</p>
               <p>Phone: ${grnData.supplierPhone}</p>
               <p>Email: ${grnData.supplierEmail}</p>
@@ -4404,6 +4422,35 @@ Thank you for your business!`,
                                 className="w-full h-8 p-1 text-lg font-bold"
                               />
                             </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                              <div>
+                                <span className="text-xs">TIN Name:</span>
+                                <Input 
+                                  value={grnData.businessTinName}
+                                  onChange={(e) => handleGRNChange("businessTinName", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm"
+                                  placeholder="TIN Name"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-xs">TIN Number:</span>
+                                <Input 
+                                  value={grnData.businessTinNumber}
+                                  onChange={(e) => handleGRNChange("businessTinNumber", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm"
+                                  placeholder="TIN Number"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-xs">VRN No.:</span>
+                                <Input 
+                                  value={grnData.businessVrnNumber}
+                                  onChange={(e) => handleGRNChange("businessVrnNumber", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm"
+                                  placeholder="VRN Number"
+                                />
+                              </div>
+                            </div>
                             <div className="mt-2">
                               <Textarea 
                                 value={grnData.businessAddress}
@@ -4437,6 +4484,35 @@ Thank you for your business!`,
                               onChange={(e) => handleGRNChange("supplierName", e.target.value)}
                               className="w-full h-6 p-1 text-sm mb-1"
                             />
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                              <div>
+                                <span className="text-xs">TIN Name:</span>
+                                <Input 
+                                  value={grnData.supplierTinName}
+                                  onChange={(e) => handleGRNChange("supplierTinName", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm"
+                                  placeholder="TIN Name"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-xs">TIN Number:</span>
+                                <Input 
+                                  value={grnData.supplierTinNumber}
+                                  onChange={(e) => handleGRNChange("supplierTinNumber", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm"
+                                  placeholder="TIN Number"
+                                />
+                              </div>
+                              <div>
+                                <span className="text-xs">VRN No.:</span>
+                                <Input 
+                                  value={grnData.supplierVrnNumber}
+                                  onChange={(e) => handleGRNChange("supplierVrnNumber", e.target.value)}
+                                  className="w-full h-6 p-1 text-sm"
+                                  placeholder="VRN Number"
+                                />
+                              </div>
+                            </div>
                             <Input 
                               value={grnData.supplierAddress}
                               onChange={(e) => handleGRNChange("supplierAddress", e.target.value)}
