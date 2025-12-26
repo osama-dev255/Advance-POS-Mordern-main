@@ -30,10 +30,12 @@ import {
   Plus,
   Minus,
   Share,
-  ExternalLink
+  ExternalLink,
+  MessageCircle
 } from "lucide-react";
 import { getTemplateConfig, saveTemplateConfig, ReceiptTemplateConfig } from "@/utils/templateUtils";
 import { PrintUtils } from "@/utils/printUtils";
+import WhatsAppUtils from "@/utils/whatsappUtils";
 
 interface Template {
   id: string;
@@ -725,6 +727,8 @@ Date: [DATE]`,
   const [invoiceData, setInvoiceData] = useState<InvoiceData>(initialInvoiceData);
   
   const [showInvoiceOptions, setShowInvoiceOptions] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   
   const [expenseVoucherData, setExpenseVoucherData] = useState<ExpenseVoucherData>({
     voucherNumber: "EV-2024-001",
@@ -1932,14 +1936,20 @@ Date: [DATE]`,
       const tempContainer = document.createElement('div');
       tempContainer.innerHTML = cleanInvoiceHTML;
       tempContainer.id = 'clean-invoice-content';
-      tempContainer.style.display = 'none';
+      // Instead of display: none, use position off-screen to make it invisible but renderable
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '-9999px';
+      tempContainer.style.opacity = '0';
+      tempContainer.style.pointerEvents = 'none';
+      tempContainer.style.zIndex = '-9999';
       document.body.appendChild(tempContainer);
       
       const opt = {
         margin: 5,
         filename: `Invoice_${invoiceData.invoiceNumber}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
       
@@ -1995,8 +2005,14 @@ Date: [DATE]`,
     closeInvoiceOptionsDialog();
   };
   
-  // Handle download invoice as PDF
+  // Handle download invoice - show download options dialog
   const handleDownloadInvoice = () => {
+    setShowInvoiceOptions(false);
+    setShowDownloadOptions(true);
+  };
+  
+  // Handle download as PDF
+  const handleDownloadAsPDF = () => {
     // Import html2pdf dynamically
     import('html2pdf.js').then((html2pdfModule) => {
       // Generate clean invoice HTML
@@ -2006,14 +2022,20 @@ Date: [DATE]`,
       const tempContainer = document.createElement('div');
       tempContainer.innerHTML = cleanInvoiceHTML;
       tempContainer.id = 'clean-invoice-content';
-      tempContainer.style.display = 'none';
+      // Instead of display: none, use position off-screen to make it invisible but renderable
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '-9999px';
+      tempContainer.style.opacity = '0';
+      tempContainer.style.pointerEvents = 'none';
+      tempContainer.style.zIndex = '-9999';
       document.body.appendChild(tempContainer);
       
       const opt = {
         margin: 5,
         filename: `Invoice_${invoiceData.invoiceNumber}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
+        html2canvas: { scale: 2, useCORS: true },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
       
@@ -2034,11 +2056,211 @@ Date: [DATE]`,
       alert('Error loading PDF library. Please try again.');
     });
     
-    closeInvoiceOptionsDialog();
+    setShowDownloadOptions(false);
   };
   
-  // Handle share invoice - copy invoice details to clipboard
+  // Handle download as Excel (reusing existing export functionality)
+  const handleDownloadAsExcel = () => {
+    import('xlsx').then((XLSXModule) => {
+      // Create worksheet data
+      const wsData = [
+        ['INVOICE', invoiceData.invoiceNumber],
+        ['Invoice Date', invoiceData.invoiceDate],
+        ['Due Date', invoiceData.dueDate],
+        [],
+        ['FROM:'],
+        [invoiceData.businessName],
+        [invoiceData.businessAddress],
+        ['Phone:', invoiceData.businessPhone],
+        ['Email:', invoiceData.businessEmail],
+        [],
+        ['BILL TO:'],
+        [invoiceData.clientName],
+        [invoiceData.clientAddress],
+        [invoiceData.clientCityState],
+        ['Phone:', invoiceData.clientPhone],
+        ['Email:', invoiceData.clientEmail],
+        [],
+        ['DESCRIPTION', 'QUANTITY', 'UNIT', 'RATE', 'AMOUNT'],
+        ...invoiceData.items.map(item => [
+          item.description, 
+          item.quantity, 
+          item.unit, 
+          `TSH ${item.rate.toFixed(2)}`, 
+          `TSH ${item.amount.toFixed(2)}`
+        ]),
+        [],
+        ['SUBTOTAL', `TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}`],
+        ['DISCOUNT', `TSH ${invoiceData.discount.toFixed(2)}`],
+        ['TAX', `TSH ${invoiceData.tax.toFixed(2)}`],
+        ['TOTAL', `TSH ${calculateInvoiceTotals().total.toFixed(2)}`],
+        ['AMOUNT DUE', `TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}`]
+      ];
+      
+      const ws = XLSXModule.utils.aoa_to_sheet(wsData);
+      const wb = XLSXModule.utils.book_new();
+      XLSXModule.utils.book_append_sheet(wb, ws, 'Invoice');
+      
+      XLSXModule.writeFile(wb, `Invoice_${invoiceData.invoiceNumber}.xlsx`);
+    }).catch(err => {
+      console.error('Error generating Excel:', err);
+      alert('Error generating Excel file. Please try again.');
+    });
+    
+    setShowDownloadOptions(false);
+  };
+  
+  // Handle download as CSV
+  const handleDownloadAsCSV = () => {
+    let csvContent = 'data:text/csv;charset=utf-8,Invoice Details\n';
+    csvContent += `Invoice Number,${invoiceData.invoiceNumber}\n`;
+    csvContent += `Invoice Date,${invoiceData.invoiceDate}\n`;
+    csvContent += `Due Date,${invoiceData.dueDate}\n`;
+    csvContent += '\n';
+    csvContent += 'FROM,\n';
+    csvContent += `${invoiceData.businessName},\n`;
+    csvContent += `${invoiceData.businessAddress},\n`;
+    csvContent += `Phone,${invoiceData.businessPhone}\n`;
+    csvContent += `Email,${invoiceData.businessEmail}\n`;
+    csvContent += '\n';
+    csvContent += 'BILL TO,\n';
+    csvContent += `${invoiceData.clientName},\n`;
+    csvContent += `${invoiceData.clientAddress},\n`;
+    csvContent += `${invoiceData.clientCityState},\n`;
+    csvContent += `Phone,${invoiceData.clientPhone}\n`;
+    csvContent += `Email,${invoiceData.clientEmail}\n`;
+    csvContent += '\n';
+    csvContent += 'Item Description,Quantity,Unit,Rate,Amount\n';
+    
+    invoiceData.items.forEach(item => {
+      csvContent += `${item.description},${item.quantity},${item.unit},TSH ${item.rate.toFixed(2)},TSH ${item.amount.toFixed(2)}\n`;
+    });
+    
+    csvContent += '\n';
+    csvContent += `Subtotal,TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}\n`;
+    csvContent += `Discount,TSH ${invoiceData.discount.toFixed(2)}\n`;
+    csvContent += `Tax,TSH ${invoiceData.tax.toFixed(2)}\n`;
+    csvContent += `Total,TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
+    csvContent += `Amount Due,TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}\n`;
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Invoice_${invoiceData.invoiceNumber}.csv`);
+    document.body.appendChild(link);
+    
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
+    
+    setShowDownloadOptions(false);
+  };
+  
+  // Close download options dialog
+  const closeDownloadOptionsDialog = () => {
+    setShowDownloadOptions(false);
+  };
+  
+  // Handle share invoice - show share options dialog
   const handleShareInvoice = () => {
+    setShowInvoiceOptions(false);
+    setShowShareOptions(true);
+  };
+  
+  // Handle WhatsApp share
+  const handleWhatsAppShare = () => {
+    // Create a text version of the invoice for sharing
+    let invoiceText = `*INVOICE*\n\n`;
+    invoiceText += `*Invoice Number:* ${invoiceData.invoiceNumber}\n`;
+    invoiceText += `*Invoice Date:* ${invoiceData.invoiceDate}\n`;
+    invoiceText += `*Due Date:* ${invoiceData.dueDate}\n`;
+    invoiceText += `*Generated at:* ${new Date().toLocaleString()}\n\n`;
+    
+    invoiceText += `*FROM:*\n`;
+    invoiceText += `${invoiceData.businessName}\n`;
+    invoiceText += `${invoiceData.businessAddress}\n`;
+    invoiceText += `Phone: ${invoiceData.businessPhone}\n`;
+    invoiceText += `Email: ${invoiceData.businessEmail}\n\n`;
+    
+    invoiceText += `*BILL TO:*\n`;
+    invoiceText += `${invoiceData.clientName}\n`;
+    invoiceText += `${invoiceData.clientAddress}\n`;
+    invoiceText += `${invoiceData.clientCityState}\n`;
+    invoiceText += `Phone: ${invoiceData.clientPhone}\n`;
+    invoiceText += `Email: ${invoiceData.clientEmail}\n\n`;
+    
+    invoiceText += `*ITEMS:*\n`;
+    invoiceData.items.forEach(item => {
+      invoiceText += `${item.description} - ${item.quantity} ${item.unit} @ TSH ${item.rate.toFixed(2)} = TSH ${item.amount.toFixed(2)}\n`;
+    });
+    
+    invoiceText += `\n*SUBTOTAL:* TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}\n`;
+    invoiceText += `*DISCOUNT:* TSH ${invoiceData.discount.toFixed(2)}\n`;
+    invoiceText += `*TAX:* TSH ${invoiceData.tax.toFixed(2)}\n`;
+    invoiceText += `*TOTAL:* TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
+    invoiceText += `*AMOUNT DUE:* TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}\n`;
+    
+    // Format phone number for WhatsApp (remove all non-digit characters except the plus sign)
+    if (invoiceData.clientPhone) {
+      const formattedPhoneNumber = invoiceData.clientPhone.replace(/[^+\d]/g, '');
+      WhatsAppUtils.sendWhatsAppMessage(formattedPhoneNumber, invoiceText);
+    } else {
+      alert('Client phone number is not available. Please add a phone number to share via WhatsApp.');
+    }
+    
+    setShowShareOptions(false);
+  };
+  
+  // Handle Email share
+  const handleEmailShare = () => {
+    // Create a text version of the invoice for sharing
+    let invoiceText = `INVOICE\n\n`;
+    invoiceText += `Invoice Number: ${invoiceData.invoiceNumber}\n`;
+    invoiceText += `Invoice Date: ${invoiceData.invoiceDate}\n`;
+    invoiceText += `Due Date: ${invoiceData.dueDate}\n`;
+    invoiceText += `Generated at: ${new Date().toLocaleString()}\n\n`;
+    
+    invoiceText += `FROM:\n`;
+    invoiceText += `${invoiceData.businessName}\n`;
+    invoiceText += `${invoiceData.businessAddress}\n`;
+    invoiceText += `Phone: ${invoiceData.businessPhone}\n`;
+    invoiceText += `Email: ${invoiceData.businessEmail}\n\n`;
+    
+    invoiceText += `BILL TO:\n`;
+    invoiceText += `${invoiceData.clientName}\n`;
+    invoiceText += `${invoiceData.clientAddress}\n`;
+    invoiceText += `${invoiceData.clientCityState}\n`;
+    invoiceText += `Phone: ${invoiceData.clientPhone}\n`;
+    invoiceText += `Email: ${invoiceData.clientEmail}\n\n`;
+    
+    invoiceText += `ITEMS:\n`;
+    invoiceData.items.forEach(item => {
+      invoiceText += `${item.description} - ${item.quantity} ${item.unit} @ TSH ${item.rate.toFixed(2)} = TSH ${item.amount.toFixed(2)}\n`;
+    });
+    
+    invoiceText += `\nSUBTOTAL: TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}\n`;
+    invoiceText += `DISCOUNT: TSH ${invoiceData.discount.toFixed(2)}\n`;
+    invoiceText += `TAX: TSH ${invoiceData.tax.toFixed(2)}\n`;
+    invoiceText += `TOTAL: TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
+    invoiceText += `AMOUNT DUE: TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}\n`;
+    
+    // Create mailto link
+    const subject = `Invoice ${invoiceData.invoiceNumber}`;
+    const body = encodeURIComponent(invoiceText);
+    
+    if (invoiceData.clientEmail) {
+      const mailtoLink = `mailto:${invoiceData.clientEmail}?subject=${encodeURIComponent(subject)}&body=${body}`;
+      window.open(mailtoLink, '_blank');
+    } else {
+      alert('Client email address is not available. Please add an email address to share via email.');
+    }
+    
+    setShowShareOptions(false);
+  };
+  
+  // Handle copy to clipboard
+  const handleCopyToClipboard = () => {
     // Create a text version of the invoice for sharing
     let invoiceText = `INVOICE\n`;
     invoiceText += `Invoice Number: ${invoiceData.invoiceNumber}\n`;
@@ -2079,7 +2301,12 @@ Date: [DATE]`,
         alert('Failed to copy invoice details to clipboard');
       });
     
-    closeInvoiceOptionsDialog();
+    setShowShareOptions(false);
+  };
+  
+  // Close share options dialog
+  const closeShareOptionsDialog = () => {
+    setShowShareOptions(false);
   };
   
   // Handle export invoice as Excel
@@ -3789,13 +4016,109 @@ Date: [DATE]`,
                 variant="outline"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Export as PDF
+                Export as Excel
               </Button>
             </div>
             
             <div className="mt-4 flex justify-end">
               <Button 
                 onClick={closeInvoiceOptionsDialog}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Share Options Dialog */}
+      {showShareOptions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold mb-4">Share Invoice</h3>
+            <p className="mb-4">Choose how you want to share your invoice:</p>
+            
+            <div className="space-y-2">
+              <Button 
+                onClick={handleWhatsAppShare}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <MessageCircle className="h-4 w-4 mr-2" />
+                Share via WhatsApp
+              </Button>
+              
+              <Button 
+                onClick={handleEmailShare}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Share via Email
+              </Button>
+              
+              <Button 
+                onClick={handleCopyToClipboard}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy to Clipboard
+              </Button>
+            </div>
+            
+            <div className="mt-4 flex justify-end">
+              <Button 
+                onClick={closeShareOptionsDialog}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Download Options Dialog */}
+      {showDownloadOptions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold mb-4">Download Invoice</h3>
+            <p className="mb-4">Choose format to download your invoice:</p>
+            
+            <div className="space-y-2">
+              <Button 
+                onClick={handleDownloadAsPDF}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Download as PDF
+              </Button>
+              
+              <Button 
+                onClick={handleDownloadAsExcel}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2" />
+                Download as Excel
+              </Button>
+              
+              <Button 
+                onClick={handleDownloadAsCSV}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Download as CSV
+              </Button>
+            </div>
+            
+            <div className="mt-4 flex justify-end">
+              <Button 
+                onClick={closeDownloadOptionsDialog}
                 variant="outline"
               >
                 Cancel
