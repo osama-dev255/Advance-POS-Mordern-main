@@ -1823,7 +1823,7 @@ Date: [DATE]`,
           <div style="font-size: 18px; font-weight: bold; margin: 10px 0;">${invoiceData.invoiceNumber}</div>
           <div style="font-size: 14px; margin: 5px 0;">Generated: ${invoiceData.timestamp}</div>
           <div style="font-size: 14px; margin: 5px 0;">AMOUNT DUE</div>
-          <div style="font-size: 24px; font-weight: bold; color: #dc2626; margin: 10px 0;">TSH ${invoiceData.amountDue.toFixed(2)}</div>
+          <div style="font-size: 24px; font-weight: bold; color: #dc2626; margin: 10px 0;">${formatCurrency(invoiceData.amountDue)}</div>
         </div>
         
         <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
@@ -1872,8 +1872,8 @@ Date: [DATE]`,
                   <td style="border: 1px solid #d1d5db; padding: 8px;">${item.description}</td>
                   <td style="border: 1px solid #d1d5db; padding: 8px;">${item.quantity}</td>
                   <td style="border: 1px solid #d1d5db; padding: 8px;">${item.unit}</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px;">${item.rate.toFixed(2)}</td>
-                  <td style="border: 1px solid #d1d5db; padding: 8px;">TSH ${item.amount.toFixed(2)}</td>
+                  <td style="border: 1px solid #d1d5db; padding: 8px;">${formatCurrency(item.rate).replace('TZS ', '')}</td>
+                  <td style="border: 1px solid #d1d5db; padding: 8px;">${formatCurrency(item.amount)}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1894,31 +1894,31 @@ Date: [DATE]`,
           <table style="width: 300px; font-size: 14px;">
             <tr>
               <td style="padding: 5px;"><strong>Subtotal:</strong></td>
-              <td style="padding: 5px; text-align: right;">TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}</td>
+              <td style="padding: 5px; text-align: right;">${formatCurrency(calculateInvoiceTotals().subtotal)}</td>
             </tr>
             <tr>
               <td style="padding: 5px;"><strong>Discount:</strong></td>
-              <td style="padding: 5px; text-align: right;">TSH ${invoiceData.discount.toFixed(2)}</td>
+              <td style="padding: 5px; text-align: right;">${formatCurrency(invoiceData.discount)}</td>
             </tr>
             <tr>
               <td style="padding: 5px;"><strong>Tax:</strong></td>
-              <td style="padding: 5px; text-align: right;">TSH ${invoiceData.tax.toFixed(2)}</td>
+              <td style="padding: 5px; text-align: right;">${formatCurrency(invoiceData.tax)}</td>
             </tr>
             <tr style="border-top: 2px solid #000; padding-top: 5px;">
               <td style="padding: 5px;"><strong>TOTAL:</strong></td>
-              <td style="padding: 5px; text-align: right;"><strong>TSH ${calculateInvoiceTotals().total.toFixed(2)}</strong></td>
+              <td style="padding: 5px; text-align: right;"><strong>${formatCurrency(calculateInvoiceTotals().total)}</strong></td>
             </tr>
             <tr>
               <td style="padding: 5px;"><strong>Amount Paid:</strong></td>
-              <td style="padding: 5px; text-align: right;">TSH ${invoiceData.amountPaid.toFixed(2)}</td>
+              <td style="padding: 5px; text-align: right;">${formatCurrency(invoiceData.amountPaid)}</td>
             </tr>
             <tr>
               <td style="padding: 5px;"><strong>Credit Brought Forward from previous:</strong></td>
-              <td style="padding: 5px; text-align: right;">TSH ${invoiceData.creditBroughtForward.toFixed(2)}</td>
+              <td style="padding: 5px; text-align: right;">${formatCurrency(invoiceData.creditBroughtForward)}</td>
             </tr>
             <tr style="border-top: 2px solid #000; padding-top: 5px;">
               <td style="padding: 5px;"><strong>AMOUNT DUE:</strong></td>
-              <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}</strong></td>
+              <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>${formatCurrency(calculateInvoiceTotals().amountDue)}</strong></td>
             </tr>
           </table>
         </div>
@@ -2093,17 +2093,17 @@ Date: [DATE]`,
           item.description, 
           item.quantity, 
           item.unit, 
-          `TSH ${item.rate.toFixed(2)}`, 
-          `TSH ${item.amount.toFixed(2)}`
+          `${formatCurrency(item.rate)}`, 
+          `${formatCurrency(item.amount)}`
         ]),
         [],
-        ['SUBTOTAL', `TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}`],
-        ['DISCOUNT', `TSH ${invoiceData.discount.toFixed(2)}`],
-        ['TAX', `TSH ${invoiceData.tax.toFixed(2)}`],
-        ['TOTAL', `TSH ${calculateInvoiceTotals().total.toFixed(2)}`],
-        ['Amount Paid', `TSH ${invoiceData.amountPaid.toFixed(2)}`],
-        ['Credit Brought Forward from previous', `TSH ${invoiceData.creditBroughtForward.toFixed(2)}`],
-        ['AMOUNT DUE', `TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}`]
+        ['SUBTOTAL', `${formatCurrency(calculateInvoiceTotals().subtotal)}`],
+        ['DISCOUNT', `${formatCurrency(invoiceData.discount)}`],
+        ['TAX', `${formatCurrency(invoiceData.tax)}`],
+        ['TOTAL', `${formatCurrency(calculateInvoiceTotals().total)}`],
+        ['Amount Paid', `${formatCurrency(invoiceData.amountPaid)}`],
+        ['Credit Brought Forward from previous', `${formatCurrency(invoiceData.creditBroughtForward)}`],
+        ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`]
       ];
       
       const ws = XLSXModule.utils.aoa_to_sheet(wsData);
@@ -2142,17 +2142,17 @@ Date: [DATE]`,
     csvContent += 'Item Description,Quantity,Unit,Rate,Amount\n';
     
     invoiceData.items.forEach(item => {
-      csvContent += `${item.description},${item.quantity},${item.unit},TSH ${item.rate.toFixed(2)},TSH ${item.amount.toFixed(2)}\n`;
+      csvContent += `${item.description},${item.quantity},${item.unit},${formatCurrency(item.rate)},${formatCurrency(item.amount)}\n`;
     });
     
     csvContent += '\n';
-    csvContent += `Subtotal,TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}\n`;
-    csvContent += `Discount,TSH ${invoiceData.discount.toFixed(2)}\n`;
-    csvContent += `Tax,TSH ${invoiceData.tax.toFixed(2)}\n`;
-    csvContent += `Total,TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
-    csvContent += `Amount Paid,TSH ${invoiceData.amountPaid.toFixed(2)}\n`;
-    csvContent += `Credit Brought Forward from previous,TSH ${invoiceData.creditBroughtForward.toFixed(2)}\n`;
-    csvContent += `Amount Due,TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}\n`;
+    csvContent += `Subtotal,${formatCurrency(calculateInvoiceTotals().subtotal)}\n`;
+    csvContent += `Discount,${formatCurrency(invoiceData.discount)}\n`;
+    csvContent += `Tax,${formatCurrency(invoiceData.tax)}\n`;
+    csvContent += `Total,${formatCurrency(calculateInvoiceTotals().total)}\n`;
+    csvContent += `Amount Paid,${formatCurrency(invoiceData.amountPaid)}\n`;
+    csvContent += `Credit Brought Forward from previous,${formatCurrency(invoiceData.creditBroughtForward)}\n`;
+    csvContent += `Amount Due,${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
     
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
@@ -2203,16 +2203,16 @@ Date: [DATE]`,
     
     invoiceText += `*ITEMS:*\n`;
     invoiceData.items.forEach(item => {
-      invoiceText += `${item.description} - ${item.quantity} ${item.unit} @ TSH ${item.rate.toFixed(2)} = TSH ${item.amount.toFixed(2)}\n`;
+      invoiceText += `${item.description} - ${item.quantity} ${item.unit} @ ${formatCurrency(item.rate)} = ${formatCurrency(item.amount)}\n`;
     });
     
-    invoiceText += `\n*SUBTOTAL:* TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}\n`;
-    invoiceText += `*DISCOUNT:* TSH ${invoiceData.discount.toFixed(2)}\n`;
-    invoiceText += `*TAX:* TSH ${invoiceData.tax.toFixed(2)}\n`;
-    invoiceText += `*TOTAL:* TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
-    invoiceText += `*Amount Paid:* TSH ${invoiceData.amountPaid.toFixed(2)}\n`;
-    invoiceText += `*Credit Brought Forward from previous:* TSH ${invoiceData.creditBroughtForward.toFixed(2)}\n`;
-    invoiceText += `*AMOUNT DUE:* TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}\n`;
+    invoiceText += `\n*SUBTOTAL:* ${formatCurrency(calculateInvoiceTotals().subtotal)}\n`;
+    invoiceText += `*DISCOUNT:* ${formatCurrency(invoiceData.discount)}\n`;
+    invoiceText += `*TAX:* ${formatCurrency(invoiceData.tax)}\n`;
+    invoiceText += `*TOTAL:* ${formatCurrency(calculateInvoiceTotals().total)}\n`;
+    invoiceText += `*Amount Paid:* ${formatCurrency(invoiceData.amountPaid)}\n`;
+    invoiceText += `*Credit Brought Forward from previous:* ${formatCurrency(invoiceData.creditBroughtForward)}\n`;
+    invoiceText += `*AMOUNT DUE:* ${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
     
     // Format phone number for WhatsApp (remove all non-digit characters except the plus sign)
     if (invoiceData.clientPhone) {
@@ -2249,16 +2249,16 @@ Date: [DATE]`,
     
     invoiceText += `ITEMS:\n`;
     invoiceData.items.forEach(item => {
-      invoiceText += `${item.description} - ${item.quantity} ${item.unit} @ TSH ${item.rate.toFixed(2)} = TSH ${item.amount.toFixed(2)}\n`;
+      invoiceText += `${item.description} - ${item.quantity} ${item.unit} @ ${formatCurrency(item.rate)} = ${formatCurrency(item.amount)}\n`;
     });
     
-    invoiceText += `\nSUBTOTAL: TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}\n`;
-    invoiceText += `DISCOUNT: TSH ${invoiceData.discount.toFixed(2)}\n`;
-    invoiceText += `TAX: TSH ${invoiceData.tax.toFixed(2)}\n`;
-    invoiceText += `TOTAL: TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
-    invoiceText += `Amount Paid: TSH ${invoiceData.amountPaid.toFixed(2)}\n`;
-    invoiceText += `Credit Brought Forward from previous: TSH ${invoiceData.creditBroughtForward.toFixed(2)}\n`;
-    invoiceText += `AMOUNT DUE: TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}\n`;
+    invoiceText += `\nSUBTOTAL: ${formatCurrency(calculateInvoiceTotals().subtotal)}\n`;
+    invoiceText += `DISCOUNT: ${formatCurrency(invoiceData.discount)}\n`;
+    invoiceText += `TAX: ${formatCurrency(invoiceData.tax)}\n`;
+    invoiceText += `TOTAL: ${formatCurrency(calculateInvoiceTotals().total)}\n`;
+    invoiceText += `Amount Paid: ${formatCurrency(invoiceData.amountPaid)}\n`;
+    invoiceText += `Credit Brought Forward from previous: ${formatCurrency(invoiceData.creditBroughtForward)}\n`;
+    invoiceText += `AMOUNT DUE: ${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
     
     // Create mailto link
     const subject = `Invoice ${invoiceData.invoiceNumber}`;
@@ -2351,17 +2351,17 @@ Date: [DATE]`,
           item.description, 
           item.quantity, 
           item.unit, 
-          `TSH ${item.rate.toFixed(2)}`, 
-          `TSH ${item.amount.toFixed(2)}`
+          `${formatCurrency(item.rate)}`, 
+          `${formatCurrency(item.amount)}`
         ]),
         [],
-        ['SUBTOTAL', `TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}`],
-        ['DISCOUNT', `TSH ${invoiceData.discount.toFixed(2)}`],
-        ['TAX', `TSH ${invoiceData.tax.toFixed(2)}`],
-        ['TOTAL', `TSH ${calculateInvoiceTotals().total.toFixed(2)}`],
-        ['Amount Paid', `TSH ${invoiceData.amountPaid.toFixed(2)}`],
-        ['Credit Brought Forward from previous', `TSH ${invoiceData.creditBroughtForward.toFixed(2)}`],
-        ['AMOUNT DUE', `TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}`]
+        ['SUBTOTAL', `${formatCurrency(calculateInvoiceTotals().subtotal)}`],
+        ['DISCOUNT', `${formatCurrency(invoiceData.discount)}`],
+        ['TAX', `${formatCurrency(invoiceData.tax)}`],
+        ['TOTAL', `${formatCurrency(calculateInvoiceTotals().total)}`],
+        ['Amount Paid', `${formatCurrency(invoiceData.amountPaid)}`],
+        ['Credit Brought Forward from previous', `${formatCurrency(invoiceData.creditBroughtForward)}`],
+        ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`]
       ];
       
       const ws = XLSXModule.utils.aoa_to_sheet(wsData);
