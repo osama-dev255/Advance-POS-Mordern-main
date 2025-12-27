@@ -3745,19 +3745,38 @@ Date: [DATE]`,
                           </div>
                           <div>
                             <div className="text-sm font-medium">Date:</div>
-                            <div className="text-sm">{deliveryNoteData.date}</div>
+                            <Input 
+                              value={deliveryNoteData.date}
+                              onChange={(e) => handleDeliveryNoteChange("date", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-medium">Delivery Date:</div>
-                            <div className="text-sm">{deliveryNoteData.deliveryDate || "_________"}</div>
+                            <Input 
+                              value={deliveryNoteData.deliveryDate}
+                              onChange={(e) => handleDeliveryNoteChange("deliveryDate", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                              placeholder="_________"
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-medium">Vehicle #:</div>
-                            <div className="text-sm">{deliveryNoteData.vehicle || "_________"}</div>
+                            <Input 
+                              value={deliveryNoteData.vehicle}
+                              onChange={(e) => handleDeliveryNoteChange("vehicle", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                              placeholder="_________"
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-medium">Driver:</div>
-                            <div className="text-sm">{deliveryNoteData.driver || "_________"}</div>
+                            <Input 
+                              value={deliveryNoteData.driver}
+                              onChange={(e) => handleDeliveryNoteChange("driver", e.target.value)}
+                              className="w-full h-6 p-1 text-sm"
+                              placeholder="_________"
+                            />
                           </div>
                         </div>
                         
@@ -3773,29 +3792,83 @@ Date: [DATE]`,
                                   <th className="border border-gray-300 p-2 text-left">Unit</th>
                                   <th className="border border-gray-300 p-2 text-left">Delivered</th>
                                   <th className="border border-gray-300 p-2 text-left">Remarks</th>
+                                  <th className="border border-gray-300 p-2 text-left">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {deliveryNoteData.items.map((item) => (
                                   <tr key={item.id}>
-                                    <td className="border border-gray-300 p-2">{item.description}</td>
-                                    <td className="border border-gray-300 p-2">{item.quantity}</td>
-                                    <td className="border border-gray-300 p-2">{item.unit}</td>
-                                    <td className="border border-gray-300 p-2">{item.delivered}</td>
-                                    <td className="border border-gray-300 p-2">{item.remarks}</td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        value={item.description}
+                                        onChange={(e) => handleItemChange(item.id, "description", e.target.value)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        type="number"
+                                        value={item.quantity}
+                                        onChange={(e) => handleItemChange(item.id, "quantity", parseFloat(e.target.value) || 0)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        value={item.unit}
+                                        onChange={(e) => handleItemChange(item.id, "unit", e.target.value)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        type="number"
+                                        value={item.delivered}
+                                        onChange={(e) => handleItemChange(item.id, "delivered", parseFloat(e.target.value) || 0)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input 
+                                        value={item.remarks}
+                                        onChange={(e) => handleItemChange(item.id, "remarks", e.target.value)}
+                                        className="w-full h-6 p-1 text-sm"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Button 
+                                        onClick={() => handleRemoveItem(item.id)}
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-6 px-2"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
                             </table>
                           </div>
+                          <Button 
+                            onClick={handleAddItem}
+                            variant="outline"
+                            size="sm"
+                            className="mt-2"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Item
+                          </Button>
                         </div>
                         
                         {/* Document Notes */}
                         <div>
                           <h4 className="font-bold mb-2">DELIVERY NOTES:</h4>
-                          <div className="text-sm min-h-[80px]">
-                            {deliveryNoteData.deliveryNotes}
-                          </div>
+                          <Textarea 
+                            value={deliveryNoteData.deliveryNotes}
+                            onChange={(e) => handleDeliveryNoteChange("deliveryNotes", e.target.value)}
+                            className="w-full p-2 text-sm min-h-[80px]"
+                          />
                         </div>
                         
                         {/* Totals */}
