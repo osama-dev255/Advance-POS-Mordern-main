@@ -1182,43 +1182,98 @@ Date: [DATE]`,
   };
 
   // Save delivery note to localStorage
+  // Function to save delivery note to the global saved deliveries system
   const handleSaveDeliveryNote = () => {
-    if (!deliveryNoteName.trim()) {
-      const deliveryNoteNumber = getNextDeliveryNoteNumber();
-      setDeliveryNoteName(deliveryNoteNumber);
+    // Use the same approach as handleSaveTemplate for delivery notes
+    const currentTemplate = templates.find(t => t.id === selectedTemplate || t.id === viewingTemplate);
+    
+    if (currentTemplate?.type === "delivery-note") {
+      // For delivery note templates, automatically save to saved deliveries
+      try {
+        // Calculate total items
+        const totalItems = deliveryNoteData.items.reduce((sum, item) => sum + item.quantity, 0);
+        
+        // For delivery notes, we don't have rates, so total is based on quantity
+        const totalAmount = totalItems; // Just using quantity as a simple total
+        
+        // Create delivery data for saving
+        const deliveryToSave: DeliveryData = {
+          id: deliveryNoteData.deliveryNoteNumber, // Use delivery note number as ID
+          deliveryNoteNumber: deliveryNoteData.deliveryNoteNumber,
+          date: deliveryNoteData.date,
+          customer: deliveryNoteData.customerName, // Use customerName instead of clientName
+          items: totalItems, // Total number of items
+          total: totalAmount,
+          paymentMethod: 'N/A', // Templates don't have payment method
+          status: 'completed', // For templates, mark as completed
+          itemsList: deliveryNoteData.items.map(item => ({
+            name: item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            delivered: item.delivered,
+            remarks: item.remarks,
+            price: 0, // Delivery notes don't have prices
+            total: 0  // Delivery notes don't have totals
+          })),
+          subtotal: totalAmount, // For delivery notes, subtotal is same as total
+          tax: 0,
+          discount: 0,
+          amountReceived: 0,
+          change: 0,
+          vehicle: deliveryNoteData.vehicle,
+          driver: deliveryNoteData.driver,
+          deliveryNotes: deliveryNoteData.deliveryNotes
+        };
+        
+        saveDelivery(deliveryToSave);
+        
+        alert(`Delivery Note ${deliveryNoteData.deliveryNoteNumber} saved successfully to Saved Deliveries!`);
+        
+        // Show a success message and reset the form
+        resetDeliveryNoteData();
+      } catch (error) {
+        console.error('Error saving delivery:', error);
+        alert('Error saving delivery. Please try again.');
+      }
+    } else {
+      // For other cases, save to local saved delivery notes
+      if (!deliveryNoteName.trim()) {
+        const deliveryNoteNumber = getNextDeliveryNoteNumber();
+        setDeliveryNoteName(deliveryNoteNumber);
+        
+        // Also update the delivery note number in the data
+        setDeliveryNoteData(prev => ({
+          ...prev,
+          deliveryNoteNumber: deliveryNoteNumber
+        }));
+      }
       
-      // Also update the delivery note number in the data
-      setDeliveryNoteData(prev => ({
-        ...prev,
-        deliveryNoteNumber: deliveryNoteNumber
-      }));
+      const newSavedNote: SavedDeliveryNote = {
+        id: Date.now().toString(),
+        name: deliveryNoteName || getNextDeliveryNoteNumber(),
+        data: deliveryNoteData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const updatedNotes = [...savedDeliveryNotes, newSavedNote];
+      setSavedDeliveryNotes(updatedNotes);
+      localStorage.setItem('savedDeliveryNotes', JSON.stringify(updatedNotes));
+      
+      alert(`Delivery note "${newSavedNote.name}" saved successfully!`);
+      
+      // Generate next number for the next delivery note
+      setTimeout(() => {
+        const nextDeliveryNoteNumber = getNextDeliveryNoteNumber();
+        setDeliveryNoteName(nextDeliveryNoteNumber);
+        
+        // Also update the delivery note number in the data
+        setDeliveryNoteData(prev => ({
+          ...prev,
+          deliveryNoteNumber: nextDeliveryNoteNumber
+        }));
+      }, 100);
     }
-    
-    const newSavedNote: SavedDeliveryNote = {
-      id: Date.now().toString(),
-      name: deliveryNoteName || getNextDeliveryNoteNumber(),
-      data: deliveryNoteData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    const updatedNotes = [...savedDeliveryNotes, newSavedNote];
-    setSavedDeliveryNotes(updatedNotes);
-    localStorage.setItem('savedDeliveryNotes', JSON.stringify(updatedNotes));
-    
-    alert(`Delivery note "${newSavedNote.name}" saved successfully!`);
-    
-    // Generate next number for the next delivery note
-    setTimeout(() => {
-      const nextDeliveryNoteNumber = getNextDeliveryNoteNumber();
-      setDeliveryNoteName(nextDeliveryNoteNumber);
-      
-      // Also update the delivery note number in the data
-      setDeliveryNoteData(prev => ({
-        ...prev,
-        deliveryNoteNumber: nextDeliveryNoteNumber
-      }));
-    }, 100);
   };
 
   // Load a saved delivery note
