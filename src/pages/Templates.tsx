@@ -768,6 +768,7 @@ Date: [DATE]`,
   const [invoiceData, setInvoiceData] = useState<InvoiceData>(initialInvoiceData);
   
   const [showInvoiceOptions, setShowInvoiceOptions] = useState(false);
+  const [showDeliveryNoteOptions, setShowDeliveryNoteOptions] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   
@@ -968,8 +969,10 @@ Date: [DATE]`,
         
         alert(`Delivery Note ${deliveryNoteData.deliveryNoteNumber} saved successfully to Saved Deliveries!`);
         
-        // Show a success message and reset the form
-        resetDeliveryNoteData();
+        // Show the delivery note options dialog after saving
+        showDeliveryNoteOptionsDialog();
+        
+        // Don't reset here - let the user choose an option first
       } catch (error) {
         console.error('Error saving delivery:', error);
         alert('Error saving delivery. Please try again.');
@@ -2017,6 +2020,23 @@ Date: [DATE]`,
     setShowInvoiceOptions(false);
   };
   
+  // Show delivery note options dialog
+  const showDeliveryNoteOptionsDialog = () => {
+    // Update delivery note date and timestamp to current date/time when saving
+    setDeliveryNoteData(prev => ({
+      ...prev,
+      date: new Date().toISOString().split('T')[0],
+      timestamp: new Date().toLocaleString()
+    }));
+    
+    setShowDeliveryNoteOptions(true);
+  };
+  
+  // Close delivery note options dialog
+  const closeDeliveryNoteOptionsDialog = () => {
+    setShowDeliveryNoteOptions(false);
+  };
+  
   // Function to generate clean invoice HTML for printing
   const generateCleanInvoiceHTML = (): string => {
     // Create a clean version of the invoice without input fields
@@ -3004,6 +3024,9 @@ Date: [DATE]`,
                           saveInvoice(invoiceToSave);
                           
                           alert(`Invoice ${invoiceData.invoiceNumber} saved successfully to Saved Invoices!`);
+                          
+                          // Show the invoice options dialog after saving
+                          showInvoiceOptionsDialog();
                         } catch (error) {
                           console.error('Error saving invoice:', error);
                           alert('Error saving invoice. Please try again.');
@@ -4541,6 +4564,95 @@ Date: [DATE]`,
             <div className="mt-4 flex justify-end">
               <Button 
                 onClick={closeDownloadOptionsDialog}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Delivery Note Options Dialog */}
+      {showDeliveryNoteOptions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold mb-4">Delivery Note Options</h3>
+            <p className="mb-4">Choose an action for your delivery note:</p>
+            
+            <div className="space-y-2">
+              <Button 
+                onClick={() => {
+                  // Print functionality for delivery note
+                  window.print();
+                  closeDeliveryNoteOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print Delivery Note
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Download functionality for delivery note
+                  // For now, we'll just close the dialog and let the user handle download differently
+                  // In a real implementation, you would implement actual download functionality
+                  alert('Delivery note download functionality would be implemented here');
+                  closeDeliveryNoteOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Delivery Note
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Share functionality for delivery note
+                  alert('Delivery note sharing functionality would be implemented here');
+                  closeDeliveryNoteOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Share className="h-4 w-4 mr-2" />
+                Share Delivery Note
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Export functionality for delivery note
+                  alert('Delivery note export functionality would be implemented here');
+                  closeDeliveryNoteOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Export Delivery Note
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Save to saved deliveries
+                  alert('Delivery note saved to saved deliveries!');
+                  closeDeliveryNoteOptionsDialog();
+                  resetDeliveryNoteData();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save to Saved Deliveries
+              </Button>
+            </div>
+            
+            <div className="mt-4 flex justify-end">
+              <Button 
+                onClick={closeDeliveryNoteOptionsDialog}
                 variant="outline"
               >
                 Cancel
