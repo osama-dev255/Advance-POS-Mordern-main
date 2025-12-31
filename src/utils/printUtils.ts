@@ -1548,6 +1548,371 @@ export class PrintUtils {
     }, 250);
   }
 
+  // Print delivery note in template format
+  static printDeliveryNote(delivery: any) {
+    // Show loading indicator
+    this.showLoadingIndicator('Preparing delivery note...');
+    
+    // For mobile devices, use the mobile print approach
+    if (this.isMobileDevice()) {
+      return this.printDeliveryNoteMobile(delivery);
+    }
+
+    // For desktop, use a hidden iframe approach to avoid window stacking
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'absolute';
+    printFrame.style.top = '-1000px';
+    printFrame.style.left = '-1000px';
+    document.body.appendChild(printFrame);
+    
+    const printDocument = printFrame.contentDocument || printFrame.contentWindow?.document;
+    if (!printDocument) {
+      this.hideLoadingIndicator();
+      console.error('Could not access print frame document');
+      return;
+    }
+    
+    // Format the delivery note content
+    const deliveryNoteContent = `<!DOCTYPE html>
+<html>
+  <head>
+    <title>Delivery Note</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      @media print {
+        @page {
+          margin: 0.5in;
+          size: auto;
+        }
+        body {
+          margin: 0.5in;
+          padding: 0;
+        }
+      }
+      body {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        max-width: 320px;
+        margin: 0 auto;
+        padding: 10px;
+      }
+      .header {
+        text-align: center;
+        border-bottom: 1px dashed #000;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+      }
+      .business-name {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .business-info {
+        font-size: 10px;
+        margin-bottom: 5px;
+      }
+      .delivery-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        margin-bottom: 10px;
+      }
+      .customer-info {
+        border: 1px solid #ccc;
+        padding: 8px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+      }
+      .customer-name {
+        font-weight: bold;
+        margin-bottom: 3px;
+      }
+      .customer-detail {
+        font-size: 10px;
+        margin-bottom: 2px;
+      }
+      .items {
+        margin-bottom: 10px;
+      }
+      .item {
+        display: flex;
+        margin-bottom: 5px;
+      }
+      .item-name {
+        flex: 2;
+      }
+      .item-details {
+        flex: 1;
+        text-align: right;
+      }
+      .item-price::before {
+        content: "@ ";
+      }
+      .item-total {
+        font-weight: bold;
+      }
+      .totals {
+        border-top: 1px dashed #000;
+        padding-top: 10px;
+        margin-top: 10px;
+      }
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+      .final-total {
+        font-weight: bold;
+        font-size: 14px;
+        margin: 10px 0;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 10px;
+      }
+      .thank-you {
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+      .signature-section {
+        margin-top: 30px;
+        border-top: 1px solid #000;
+        padding-top: 10px;
+      }
+      .signature-row {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="business-name">POS BUSINESS</div>
+      <div class="business-info">123 Business St, City, Country</div>
+      <div class="business-info">Phone: (123) 456-7890</div>
+    </div>
+    
+    <div class="delivery-info">
+      <div>Delivery #: ${delivery.deliveryNoteNumber || 'DN-' + Date.now()}</div>
+      <div>${new Date(delivery.date).toLocaleDateString()}</div>
+    </div>
+    
+    <div class="customer-info">
+      <div class="customer-name">${delivery.customer}</div>
+      ${delivery.vehicle ? `<div class="customer-detail">Vehicle: ${delivery.vehicle}</div>` : ''}
+      ${delivery.driver ? `<div class="customer-detail">Driver: ${delivery.driver}</div>` : ''}
+    </div>
+    
+    <div class="items">
+      <div style="font-weight: bold; margin-bottom: 5px;">Items:</div>
+      ${delivery.itemsList && delivery.itemsList.length > 0 ? 
+        delivery.itemsList.map((item: any) => `
+          <div class="item">
+            <div class="item-name">${item.name || item.productName}</div>
+            <div class="item-details">${item.quantity} x @ ${item.price?.toFixed(2) || item.unitPrice?.toFixed(2) || '0.00'}</div>
+            <div class="item-total">${(item.total || (item.price * item.quantity) || (item.unitPrice * item.quantity)).toFixed(2)}</div>
+          </div>
+        `).join('') : 
+        `<div>No items</div>`}
+    </div>
+    
+    <div class="totals">
+      <div class="total-row">
+        <div>Subtotal:</div>
+        <div>${(delivery.subtotal || 0).toFixed(2)}</div>
+      </div>
+      ${delivery.tax ? `
+        <div class="total-row">
+          <div>Tax:</div>
+          <div>${delivery.tax.toFixed(2)}</div>
+        </div>
+      ` : ''}
+      ${delivery.discount ? `
+        <div class="total-row">
+          <div>Discount:</div>
+          <div>${delivery.discount.toFixed(2)}</div>
+        </div>
+      ` : ''}
+      <div class="total-row">
+        <div>Total:</div>
+        <div>${delivery.total.toFixed(2)}</div>
+      </div>
+    </div>
+    
+    ${delivery.deliveryNotes ? `
+      <div style="margin: 10px 0;">
+        <div style="font-weight: bold; margin-bottom: 5px;">Special Instructions:</div>
+        <div>${delivery.deliveryNotes}</div>
+      </div>
+    ` : ''}
+    
+    <div class="signature-section">
+      <div class="signature-row">
+        <div>Received by: _________________</div>
+        <div>Date: _________________</div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <div class="thank-you">Thank you for your business!</div>
+      <div>For more info, visit us at www.posbusiness.com</div>
+    </div>
+  </body>
+</html>`;
+    
+    // Write content to iframe and print
+    printDocument.open();
+    printDocument.write(deliveryNoteContent);
+    printDocument.close();
+    
+    // Wait for content to load before printing
+    printFrame.onload = () => {
+      try {
+        printFrame.contentWindow?.focus();
+        printFrame.contentWindow?.print();
+      } catch (error) {
+        console.error('Error during printing:', error);
+      } finally {
+        // Clean up - remove iframe after a short delay to ensure printing started
+        setTimeout(() => {
+          if (printFrame.parentNode) {
+            printFrame.parentNode.removeChild(printFrame);
+          }
+          this.hideLoadingIndicator();
+        }, 1000);
+      }
+    };
+    
+    // Fallback cleanup in case onload doesn't fire
+    setTimeout(() => {
+      if (printFrame.parentNode) {
+        printFrame.parentNode.removeChild(printFrame);
+      }
+      this.hideLoadingIndicator();
+    }, 5000);
+  }
+
+  // Mobile print delivery note
+  static printDeliveryNoteMobile(delivery: any) {
+    console.log('Using mobile print approach for delivery note...');
+    
+    // Create a modal dialog for mobile printing with a clear print button
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    modal.style.zIndex = '10000';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    
+    // Format the delivery note content
+    const deliveryNoteContent = `
+      <div style="background: white; padding: 20px; max-width: 90%; max-height: 80%; overflow-y: auto;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Delivery Note Preview</h2>
+        <div style="font-family: monospace; font-size: 14px;">
+          <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+            <div style="font-weight: bold; font-size: 18px;">POS BUSINESS</div>
+            <div style="font-size: 12px;">123 Business St, City, Country</div>
+            <div style="font-size: 12px;">Phone: (123) 456-7890</div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px;">
+            <div>Delivery #: ${delivery.deliveryNoteNumber || 'DN-' + Date.now()}</div>
+            <div>${new Date(delivery.date).toLocaleDateString()}</div>
+          </div>
+          
+          <div style="padding: 8px; margin-bottom: 10px; background-color: #f9f9f9;">
+            <div style="font-weight: bold; margin-bottom: 3px;">${delivery.customer}</div>
+            ${delivery.vehicle ? `<div style="font-size: 10px; margin-bottom: 2px;">Vehicle: ${delivery.vehicle}</div>` : ''}
+            ${delivery.driver ? `<div style="font-size: 10px; margin-bottom: 2px;">Driver: ${delivery.driver}</div>` : ''}
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <div style="font-weight: bold; margin-bottom: 5px;">Items:</div>
+            ${delivery.itemsList && delivery.itemsList.length > 0 ? 
+              delivery.itemsList.map((item: any) => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                  <div>${item.name || item.productName}</div>
+                  <div>${item.quantity} x @ ${(item.price || item.unitPrice || 0).toFixed(2)}</div>
+                  <div>${(item.total || (item.price * item.quantity) || (item.unitPrice * item.quantity)).toFixed(2)}</div>
+                </div>
+              `).join('') : 
+              `<div>No items</div>`}
+          </div>
+          
+          <div style="border-top: 1px dashed #000; padding-top: 10px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <div>Subtotal:</div>
+              <div>${(delivery.subtotal || 0).toFixed(2)}</div>
+            </div>
+            ${delivery.tax ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <div>Tax:</div>
+                <div>${delivery.tax.toFixed(2)}</div>
+              </div>
+            ` : ''}
+            ${delivery.discount ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <div>Discount:</div>
+                <div>${delivery.discount.toFixed(2)}</div>
+              </div>
+            ` : ''}
+            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px;">
+              <div>Total:</div>
+              <div>${delivery.total.toFixed(2)}</div>
+            </div>
+          </div>
+          
+          ${delivery.deliveryNotes ? `
+            <div style="margin: 10px 0;">
+              <div style="font-weight: bold; margin-bottom: 5px;">Special Instructions:</div>
+              <div style="font-size: 12px;">${delivery.deliveryNotes}</div>
+            </div>
+          ` : ''}
+          
+          <div style="margin-top: 30px; border-top: 1px solid #000; padding-top: 10px;">
+            <div style="display: flex; justify-content: space-between; margin-top: 30px;">
+              <div>Received by: _________________</div>
+              <div>Date: _________________</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button id="cancelPrint" style="flex: 1; padding: 12px; background: #ccc; border: none; border-radius: 5px; font-size: 16px;">Cancel</button>
+          <button id="confirmPrint" style="flex: 1; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; font-size: 16px;">Print Delivery Note</button>
+        </div>
+      </div>
+    `;
+    
+    modal.innerHTML = deliveryNoteContent;
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    const confirmBtn = modal.querySelector('#confirmPrint');
+    const cancelBtn = modal.querySelector('#cancelPrint');
+    
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        // Use the standard print method for mobile
+        this.printDeliveryNote(delivery);
+        document.body.removeChild(modal);
+      });
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+    }
+  }
+
   // Print purchase order
   static printPurchaseOrder(poData: any) {
     const reportWindow = window.open('', '_blank');

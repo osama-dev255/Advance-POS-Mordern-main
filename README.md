@@ -33,6 +33,7 @@ This is a fully-featured Point of Sale (POS) system built with modern web techno
 - **Returns & Damages**: Handle product returns and damaged inventory
 - **Inventory Tracking**: Real-time stock levels and low stock alerts
 - **Multi-Device Support**: Responsive design for desktops, tablets, and mobile devices
+- **Saved Invoices & Delivery Notes**: Templates can be saved to user-specific database storage for later access
 
 ## Sales Permission System
 

@@ -1,4 +1,4 @@
-import { SavedInvoice } from "@/components/SavedInvoicesCard";
+import { supabase } from '@/lib/supabaseClient';
 
 const SAVED_INVOICES_KEY = 'savedInvoices';
 
@@ -19,55 +19,163 @@ export interface InvoiceData {
   change?: number;
 }
 
-export const saveInvoice = (invoice: InvoiceData): void => {
+export const saveInvoice = async (invoice: InvoiceData): Promise<void> => {
   try {
-    const savedInvoices = getSavedInvoices();
-    // Add the new invoice to the list
+    // First, save to localStorage for immediate availability
+    const savedInvoices = await getSavedInvoices();
     const updatedInvoices = [...savedInvoices, invoice];
     localStorage.setItem(SAVED_INVOICES_KEY, JSON.stringify(updatedInvoices));
+    
+    // Then save to database with user context
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase
+        .from('saved_invoices')
+        .insert({
+          user_id: user.id,
+          invoice_number: invoice.invoiceNumber,
+          date: invoice.date,
+          customer: invoice.customer,
+          items: invoice.items,
+          total: invoice.total,
+          payment_method: invoice.paymentMethod,
+          status: invoice.status,
+          items_list: invoice.itemsList,
+          subtotal: invoice.subtotal,
+          tax: invoice.tax,
+          discount: invoice.discount,
+          amount_received: invoice.amountReceived,
+          change: invoice.change
+        });
+        
+      if (error) {
+        console.error('Error saving invoice to database:', error);
+        // Don't throw error - still have local storage backup
+      }
+    }
   } catch (error) {
     console.error('Error saving invoice:', error);
     throw new Error('Failed to save invoice');
   }
 };
 
-export const getSavedInvoices = (): InvoiceData[] => {
+export const getSavedInvoices = async (): Promise<InvoiceData[]> => {
   try {
-    const saved = localStorage.getItem(SAVED_INVOICES_KEY);
-    return saved ? JSON.parse(saved) : [];
+    // First, try to get from database
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data, error } = await supabase
+        .from('saved_invoices')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error retrieving saved invoices from database:', error);
+        // Fallback to localStorage
+        const saved = localStorage.getItem(SAVED_INVOICES_KEY);
+        return saved ? JSON.parse(saved) : [];
+      }
+      
+      // Transform database records to InvoiceData format
+      return data.map(dbInvoice => ({
+        id: dbInvoice.id,
+        invoiceNumber: dbInvoice.invoice_number,
+        date: dbInvoice.date,
+        customer: dbInvoice.customer,
+        items: dbInvoice.items,
+        total: dbInvoice.total,
+        paymentMethod: dbInvoice.payment_method,
+        status: dbInvoice.status,
+        itemsList: dbInvoice.items_list,
+        subtotal: dbInvoice.subtotal,
+        tax: dbInvoice.tax,
+        discount: dbInvoice.discount,
+        amountReceived: dbInvoice.amount_received,
+        change: dbInvoice.change
+      }));
+    } else {
+      // If not authenticated, use localStorage
+      const saved = localStorage.getItem(SAVED_INVOICES_KEY);
+      return saved ? JSON.parse(saved) : [];
+    }
   } catch (error) {
     console.error('Error retrieving saved invoices:', error);
     return [];
   }
 };
 
-export const deleteInvoice = (invoiceId: string): void => {
+export const deleteInvoice = async (invoiceId: string): Promise<void> => {
   try {
-    const savedInvoices = getSavedInvoices();
+    const savedInvoices = await getSavedInvoices();
     const updatedInvoices = savedInvoices.filter(invoice => invoice.id !== invoiceId);
     localStorage.setItem(SAVED_INVOICES_KEY, JSON.stringify(updatedInvoices));
+    
+    // Also delete from database
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase
+        .from('saved_invoices')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('id', invoiceId);
+        
+      if (error) {
+        console.error('Error deleting invoice from database:', error);
+        // Don't throw error - still have local storage backup
+      }
+    }
   } catch (error) {
     console.error('Error deleting invoice:', error);
     throw new Error('Failed to delete invoice');
   }
 };
 
-export const updateInvoice = (updatedInvoice: InvoiceData): void => {
+export const updateInvoice = async (updatedInvoice: InvoiceData): Promise<void> => {
   try {
-    const savedInvoices = getSavedInvoices();
+    const savedInvoices = await getSavedInvoices();
     const updatedInvoices = savedInvoices.map(invoice => 
       invoice.id === updatedInvoice.id ? updatedInvoice : invoice
     );
     localStorage.setItem(SAVED_INVOICES_KEY, JSON.stringify(updatedInvoices));
+    
+    // Also update in database
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase
+        .from('saved_invoices')
+        .update({
+          invoice_number: updatedInvoice.invoiceNumber,
+          date: updatedInvoice.date,
+          customer: updatedInvoice.customer,
+          items: updatedInvoice.items,
+          total: updatedInvoice.total,
+          payment_method: updatedInvoice.paymentMethod,
+          status: updatedInvoice.status,
+          items_list: updatedInvoice.itemsList,
+          subtotal: updatedInvoice.subtotal,
+          tax: updatedInvoice.tax,
+          discount: updatedInvoice.discount,
+          amount_received: updatedInvoice.amountReceived,
+          change: updatedInvoice.change
+        })
+        .eq('user_id', user.id)
+        .eq('id', updatedInvoice.id);
+        
+      if (error) {
+        console.error('Error updating invoice in database:', error);
+        // Don't throw error - still have local storage backup
+      }
+    }
   } catch (error) {
     console.error('Error updating invoice:', error);
     throw new Error('Failed to update invoice');
   }
 };
 
-export const getInvoiceById = (invoiceId: string): InvoiceData | undefined => {
+export const getInvoiceById = async (invoiceId: string): Promise<InvoiceData | undefined> => {
   try {
-    const savedInvoices = getSavedInvoices();
+    const savedInvoices = await getSavedInvoices();
     return savedInvoices.find(invoice => invoice.id === invoiceId);
   } catch (error) {
     console.error('Error retrieving invoice by ID:', error);

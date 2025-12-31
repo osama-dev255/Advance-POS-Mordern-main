@@ -456,6 +456,95 @@ BEGIN
     ('Running Shoes', sports_outdoors_id, '345678901234', 'RS-003', 129.99, 65.00, 30);
 END $$;
 
+-- 25. Saved Invoices
+CREATE TABLE IF NOT EXISTS saved_invoices (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  invoice_number VARCHAR(50) NOT NULL,
+  date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  customer VARCHAR(255),
+  items INTEGER NOT NULL DEFAULT 0,
+  total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  payment_method VARCHAR(50) DEFAULT 'N/A',
+  status VARCHAR(20) NOT NULL DEFAULT 'completed' CHECK (status IN ('completed', 'pending', 'cancelled', 'refunded')),
+  items_list JSONB,
+  subtotal DECIMAL(10,2) DEFAULT 0.00,
+  tax DECIMAL(10,2) DEFAULT 0.00,
+  discount DECIMAL(10,2) DEFAULT 0.00,
+  amount_received DECIMAL(10,2) DEFAULT 0.00,
+  change DECIMAL(10,2) DEFAULT 0.00,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 26. Saved Delivery Notes
+CREATE TABLE IF NOT EXISTS saved_delivery_notes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  delivery_note_number VARCHAR(50) NOT NULL,
+  date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  customer VARCHAR(255),
+  items INTEGER NOT NULL DEFAULT 0,
+  total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  payment_method VARCHAR(50) DEFAULT 'N/A',
+  status VARCHAR(20) NOT NULL DEFAULT 'completed' CHECK (status IN ('completed', 'in-transit', 'pending', 'delivered', 'cancelled')),
+  items_list JSONB,
+  subtotal DECIMAL(10,2) DEFAULT 0.00,
+  tax DECIMAL(10,2) DEFAULT 0.00,
+  discount DECIMAL(10,2) DEFAULT 0.00,
+  amount_received DECIMAL(10,2) DEFAULT 0.00,
+  change DECIMAL(10,2) DEFAULT 0.00,
+  vehicle VARCHAR(100),
+  driver VARCHAR(255),
+  delivery_notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for saved invoices and delivery notes
+CREATE INDEX IF NOT EXISTS idx_saved_invoices_user ON saved_invoices(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_invoices_number ON saved_invoices(invoice_number);
+CREATE INDEX IF NOT EXISTS idx_saved_delivery_notes_user ON saved_delivery_notes(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_delivery_notes_number ON saved_delivery_notes(delivery_note_number);
+
+-- Enable Row Level Security (RLS) for saved invoices and delivery notes
+ALTER TABLE saved_invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE saved_delivery_notes ENABLE ROW LEVEL SECURITY;
+
+-- Create RLS policies for saved invoices
+CREATE POLICY select_own_saved_invoices ON saved_invoices
+FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY insert_own_saved_invoices ON saved_invoices
+FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY update_own_saved_invoices ON saved_invoices
+FOR UPDATE TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY delete_own_saved_invoices ON saved_invoices
+FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
+
+-- Create RLS policies for saved delivery notes
+CREATE POLICY select_own_saved_delivery_notes ON saved_delivery_notes
+FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY insert_own_saved_delivery_notes ON saved_delivery_notes
+FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY update_own_saved_delivery_notes ON saved_delivery_notes
+FOR UPDATE TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY delete_own_saved_delivery_notes ON saved_delivery_notes
+FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
+
 -- Insert sample customers
 INSERT INTO customers (first_name, last_name, email, phone) VALUES 
   ('John', 'Smith', 'john@example.com', '(555) 123-4567'),

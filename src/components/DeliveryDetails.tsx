@@ -49,7 +49,7 @@ export const DeliveryDetails = ({
       
       // Use PrintUtils for printing
       import("@/utils/printUtils").then(({ PrintUtils }) => {
-        PrintUtils.printReceipt(transaction);
+        PrintUtils.printDeliveryNote(transaction);
       });
     }
   };

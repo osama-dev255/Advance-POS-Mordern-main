@@ -886,7 +886,7 @@ Date: [DATE]`,
     }
   };
 
-  const handleSaveTemplate = () => {
+  const handleSaveTemplate = async () => {
     // Check if we're working with an invoice template
     const currentTemplate = templates.find(t => t.id === selectedTemplate || t.id === viewingTemplate);
     
@@ -916,7 +916,7 @@ Date: [DATE]`,
           change: 0,
         };
         
-        saveInvoice(invoiceToSave);
+        await saveInvoice(invoiceToSave);
         
         // Show the invoice options dialog after saving
         showInvoiceOptionsDialog();
@@ -964,7 +964,7 @@ Date: [DATE]`,
           deliveryNotes: deliveryNoteData.deliveryNotes
         };
         
-        saveDelivery(deliveryToSave);
+        await saveDelivery(deliveryToSave);
         
         // Show the delivery note options dialog after saving
         showDeliveryNoteOptionsDialog();
@@ -1183,7 +1183,7 @@ Date: [DATE]`,
 
   // Save delivery note to localStorage
   // Function to save delivery note to the global saved deliveries system
-  const handleSaveDeliveryNote = () => {
+  const handleSaveDeliveryNote = async () => {
     // Use the same approach as handleSaveTemplate for delivery notes
     const currentTemplate = templates.find(t => t.id === selectedTemplate || t.id === viewingTemplate);
     
@@ -1225,7 +1225,7 @@ Date: [DATE]`,
           deliveryNotes: deliveryNoteData.deliveryNotes
         };
         
-        saveDelivery(deliveryToSave);
+        await saveDelivery(deliveryToSave);
         
         alert(`Delivery Note ${deliveryNoteData.deliveryNoteNumber} saved successfully to Saved Deliveries!`);
         
@@ -2590,7 +2590,7 @@ Date: [DATE]`,
   };
   
   // Handle save invoice to saved invoices section
-  const handleSaveInvoice = () => {
+  const handleSaveInvoice = async () => {
     try {
       // Create invoice data for saving
       const invoiceToSave: SavedInvoiceData = {
@@ -2610,7 +2610,7 @@ Date: [DATE]`,
         change: 0,
       };
       
-      saveInvoice(invoiceToSave);
+      await saveInvoice(invoiceToSave);
       
       // Close the dialog and show success message
       setShowInvoiceOptions(false);
@@ -3178,7 +3178,7 @@ Date: [DATE]`,
                         className="w-48 h-10"
                       />
                     )}
-                    <Button onClick={() => {
+                    <Button onClick={async () => {
                       if (currentTemplate?.type === "order-form") {
                         alert(`Purchase Order ${purchaseOrderData.poNumber} saved successfully!`);
                       } else if (currentTemplate?.type === "invoice") {
@@ -3207,7 +3207,7 @@ Date: [DATE]`,
                             change: 0,
                           };
                           
-                          saveInvoice(invoiceToSave);
+                          await saveInvoice(invoiceToSave);
                           
                           alert(`Invoice ${invoiceData.invoiceNumber} saved successfully to Saved Invoices!`);
                           

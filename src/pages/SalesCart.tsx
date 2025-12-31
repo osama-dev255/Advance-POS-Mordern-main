@@ -452,7 +452,7 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
           change: paymentMethod === "debt" ? (parseFloat(amountReceived) || 0) - totalWithTax : change,
         };
         
-        saveInvoice(invoiceToSave);
+        await saveInvoice(invoiceToSave);
       } catch (error) {
         console.error('Error saving invoice:', error);
         toast({

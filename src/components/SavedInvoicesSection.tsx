@@ -18,12 +18,12 @@ export const SavedInvoicesSection = ({ onBack, onLogout, username }: SavedInvoic
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // Load saved invoices from localStorage
+  // Load saved invoices from database
   useEffect(() => {
     const loadInvoices = async () => {
       try {
         setLoading(true);
-        const savedInvoices = getSavedInvoices();
+        const savedInvoices = await getSavedInvoices();
         setInvoices(savedInvoices);
       } catch (error) {
         console.error("Error loading saved invoices:", error);

@@ -21,12 +21,12 @@ export const SavedDeliveriesSection = ({ onBack, onLogout, username }: SavedDeli
   const [loading, setLoading] = useState(true);
   const [selectedDelivery, setSelectedDelivery] = useState<DeliveryData | null>(null);
 
-  // Load saved deliveries from localStorage
+  // Load saved deliveries from database
   useEffect(() => {
     const loadDeliveries = async () => {
       try {
         setLoading(true);
-        const savedDeliveries = getSavedDeliveries();
+        const savedDeliveries = await getSavedDeliveries();
         setDeliveries(savedDeliveries);
       } catch (error) {
         console.error("Error loading saved deliveries:", error);
@@ -87,7 +87,7 @@ export const SavedDeliveriesSection = ({ onBack, onLogout, username }: SavedDeli
       deliveryNotes: delivery.deliveryNotes
     };
 
-    PrintUtils.printReceipt(transaction);
+    PrintUtils.printDeliveryNote(transaction);
   };
 
   const handleDownloadDelivery = (delivery: DeliveryData) => {
