@@ -85,6 +85,7 @@ interface DeliveryNoteData {
   driverDate: string;
   receivedByName: string;
   receivedByDate: string;
+  timestamp?: string;
 }
 
 interface SavedDeliveryNote {
@@ -2154,6 +2155,193 @@ Date: [DATE]`,
     return cleanHTML;
   };
   
+  // Function to generate clean delivery note HTML for printing
+  const generateDeliveryNoteHTML = (): string => {
+    // Create a clean version of the delivery note without input fields
+    const cleanHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Delivery Note ${deliveryNoteData.deliveryNoteNumber}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          @media print {
+            @page {
+              margin: 0.5in;
+              size: auto;
+            }
+            body {
+              margin: 0.5in;
+              padding: 0;
+            }
+          }
+          body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            font-size: 14px;
+          }
+          .delivery-note-container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+          .header h2 {
+            margin: 0;
+            font-size: 24px;
+          }
+          .header .number {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+          }
+          .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+          }
+          .business-info, .customer-info {
+            flex: 1;
+            padding: 0 10px;
+          }
+          .info-section h3 {
+            margin-top: 0;
+            font-size: 16px;
+          }
+          .delivery-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+          }
+          .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+          }
+          .items-table th,
+          .items-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+          }
+          .items-table th {
+            background-color: #f5f5f5;
+          }
+          .signature-section {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+          }
+          .signature-box {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid #000;
+          }
+          .notes-section {
+            margin-top: 20px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="delivery-note-container">
+          <div class="header">
+            <h2>DELIVERY NOTE</h2>
+            <div class="number">${deliveryNoteData.deliveryNoteNumber}</div>
+            <div>Date: ${deliveryNoteData.date}</div>
+          </div>
+          
+          <div class="info-section">
+            <div class="business-info">
+              <h3>FROM:</h3>
+              <div>${deliveryNoteData.businessName}</div>
+              <div>${deliveryNoteData.businessAddress}</div>
+              <div>Phone: ${deliveryNoteData.businessPhone}</div>
+              <div>Email: ${deliveryNoteData.businessEmail}</div>
+            </div>
+            
+            <div class="customer-info">
+              <h3>TO:</h3>
+              <div>${deliveryNoteData.customerName}</div>
+              <div>${deliveryNoteData.customerAddress1}</div>
+              <div>${deliveryNoteData.customerAddress2}</div>
+              <div>Phone: ${deliveryNoteData.customerPhone}</div>
+              <div>Email: ${deliveryNoteData.customerEmail}</div>
+            </div>
+          </div>
+          
+          <div class="delivery-details">
+            <div><strong>Delivery Date:</strong> ${deliveryNoteData.deliveryDate || 'N/A'}</div>
+            <div><strong>Vehicle:</strong> ${deliveryNoteData.vehicle || 'N/A'}</div>
+            <div><strong>Driver:</strong> ${deliveryNoteData.driver || 'N/A'}</div>
+            <div><strong>Total Items:</strong> ${deliveryNoteData.totalItems}</div>
+            <div><strong>Total Quantity:</strong> ${deliveryNoteData.totalQuantity}</div>
+            <div><strong>Total Packages:</strong> ${deliveryNoteData.totalPackages}</div>
+          </div>
+          
+          <div class="items-table">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr>
+                  <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Item</th>
+                  <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Description</th>
+                  <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Quantity</th>
+                  <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Unit</th>
+                  <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Delivered</th>
+                  <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${deliveryNoteData.items.map((item, index) => `
+                  <tr>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${index + 1}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.description}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.quantity}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.unit}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.delivered}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.remarks}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="notes-section">
+            <h3>Delivery Notes:</h3>
+            <div>${deliveryNoteData.deliveryNotes}</div>
+          </div>
+          
+          <div class="signature-section">
+            <div class="signature-box">
+              Prepared By: ${deliveryNoteData.preparedByName || '________________'}
+              <br>
+              Date: ${deliveryNoteData.preparedByDate || '________________'}
+            </div>
+            <div class="signature-box">
+              Driver: ${deliveryNoteData.driverName || '________________'}
+              <br>
+              Date: ${deliveryNoteData.driverDate || '________________'}
+            </div>
+            <div class="signature-box">
+              Received By: ${deliveryNoteData.receivedByName || '________________'}
+              <br>
+              Date: ${deliveryNoteData.receivedByDate || '________________'}
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    return cleanHTML;
+  };
+  
   // Handle print invoice - generate PDF and print
   const handlePrintInvoice = () => {
     // Import html2pdf dynamically
@@ -2177,9 +2365,9 @@ Date: [DATE]`,
       const opt = {
         margin: 5,
         filename: `Invoice_${invoiceData.invoiceNumber}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
       
       // Generate PDF and print
@@ -2266,9 +2454,9 @@ Date: [DATE]`,
       const opt = {
         margin: 5,
         filename: `Invoice_${invoiceData.invoiceNumber}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg' as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
       };
       
       // Generate PDF
@@ -4582,7 +4770,39 @@ Date: [DATE]`,
               <Button 
                 onClick={() => {
                   // Print functionality for delivery note
-                  window.print();
+                  // Create a print-friendly version of the delivery note
+                  const deliveryNoteContent = generateDeliveryNoteHTML();
+                  
+                  // Create a temporary iframe for printing
+                  const printFrame = document.createElement('iframe');
+                  printFrame.style.position = 'absolute';
+                  printFrame.style.top = '-1000px';
+                  printFrame.style.left = '-1000px';
+                  document.body.appendChild(printFrame);
+                  
+                  const printDocument = printFrame.contentDocument || printFrame.contentWindow?.document;
+                  if (printDocument) {
+                    printDocument.open();
+                    printDocument.write(deliveryNoteContent);
+                    printDocument.close();
+                    
+                    // Wait for content to load before printing
+                    printFrame.onload = () => {
+                      try {
+                        printFrame.contentWindow?.focus();
+                        printFrame.contentWindow?.print();
+                      } catch (error) {
+                        console.error('Error during printing:', error);
+                      } finally {
+                        // Clean up after printing
+                        setTimeout(() => {
+                          if (printFrame.parentNode) {
+                            printFrame.parentNode.removeChild(printFrame);
+                          }
+                        }, 1000);
+                      }
+                    };
+                  }
                   closeDeliveryNoteOptionsDialog();
                 }}
                 className="w-full flex items-center justify-start"
@@ -4595,9 +4815,34 @@ Date: [DATE]`,
               <Button 
                 onClick={() => {
                   // Download functionality for delivery note
-                  // For now, we'll just close the dialog and let the user handle download differently
-                  // In a real implementation, you would implement actual download functionality
-                  alert('Delivery note download functionality would be implemented here');
+                  // Generate the delivery note as a PDF
+                  import('html2pdf.js').then((html2pdfModule) => {
+                    const deliveryNoteContent = generateDeliveryNoteHTML();
+                    
+                    // Create a temporary container to hold the delivery note content
+                    const tempContainer = document.createElement('div');
+                    tempContainer.innerHTML = deliveryNoteContent;
+                    tempContainer.style.position = 'absolute';
+                    tempContainer.style.left = '-9999px';
+                    document.body.appendChild(tempContainer);
+                    
+                    // Configure PDF options
+                    const opt = {
+                      margin: 5,
+                      filename: `Delivery_Note_${deliveryNoteData.deliveryNoteNumber}.pdf`,
+                      image: { type: 'jpeg' as const, quality: 0.98 },
+                      html2canvas: { scale: 2, useCORS: true },
+                      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+                    };
+                    
+                    // Generate PDF
+                    html2pdfModule.default(tempContainer, opt).then(() => {
+                      // Remove temporary container after PDF generation
+                      setTimeout(() => {
+                        document.body.removeChild(tempContainer);
+                      }, 1000);
+                    });
+                  });
                   closeDeliveryNoteOptionsDialog();
                 }}
                 className="w-full flex items-center justify-start"
@@ -4610,7 +4855,60 @@ Date: [DATE]`,
               <Button 
                 onClick={() => {
                   // Share functionality for delivery note
-                  alert('Delivery note sharing functionality would be implemented here');
+                  // Create a shareable link for the delivery note
+                  try {
+                    // Generate a shareable URL for the delivery note
+                    const shareData = {
+                      title: `Delivery Note ${deliveryNoteData.deliveryNoteNumber}`,
+                      text: `Delivery Note #${deliveryNoteData.deliveryNoteNumber} for customer ${deliveryNoteData.customerName}`,
+                      url: window.location.href // In a real app, this would be a specific delivery note URL
+                    };
+                    
+                    // Use the Web Share API if available
+                    if (navigator.share) {
+                      navigator.share(shareData)
+                        .then(() => console.log('Shared successfully'))
+                        .catch((error) => {
+                          console.log('Sharing failed:', error);
+                          // Fallback to copying to clipboard
+                          try {
+                            // Try to copy the URL to clipboard
+                            navigator.clipboard.writeText(shareData.url || window.location.href)
+                              .then(() => {
+                                alert('Delivery note link copied to clipboard! You can now share it with others.');
+                              })
+                              .catch(err => {
+                                console.error('Failed to copy: ', err);
+                                // If clipboard fails, show the URL to the user
+                                const url = prompt('Copy this link to share the delivery note:', shareData.url || window.location.href);
+                              });
+                          } catch (err) {
+                            console.error('Fallback sharing failed: ', err);
+                            alert('Could not share the delivery note. Please copy the URL manually.');
+                          }
+                        });
+                    } else {
+                      // Fallback to copying to clipboard
+                      try {
+                        // Try to copy the URL to clipboard
+                        navigator.clipboard.writeText(shareData.url || window.location.href)
+                          .then(() => {
+                            alert('Delivery note link copied to clipboard! You can now share it with others.');
+                          })
+                          .catch(err => {
+                            console.error('Failed to copy: ', err);
+                            // If clipboard fails, show the URL to the user
+                            const url = prompt('Copy this link to share the delivery note:', shareData.url || window.location.href);
+                          });
+                      } catch (err) {
+                        console.error('Fallback sharing failed: ', err);
+                        alert('Could not share the delivery note. Please copy the URL manually.');
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error sharing delivery note:', error);
+                    alert('Error sharing delivery note. Please try again.');
+                  }
                   closeDeliveryNoteOptionsDialog();
                 }}
                 className="w-full flex items-center justify-start"
@@ -4623,7 +4921,41 @@ Date: [DATE]`,
               <Button 
                 onClick={() => {
                   // Export functionality for delivery note
-                  alert('Delivery note export functionality would be implemented here');
+                  // Allow user to export in different formats
+                  const exportOptions = [
+                    { name: 'PDF', action: () => exportDeliveryNoteAsPDF() },
+                    { name: 'CSV', action: () => exportDeliveryNoteAsCSV() },
+                    { name: 'JSON', action: () => exportDeliveryNoteAsJSON() },
+                  ];
+                  
+                  // Show export options to user
+                  const exportChoice = prompt(`Choose export format:
+1. PDF
+2. CSV
+3. JSON
+Enter choice (1-3):`);
+                  
+                  switch(exportChoice) {
+                    case '1':
+                    case 'PDF':
+                    case 'pdf':
+                      exportDeliveryNoteAsPDF();
+                      break;
+                    case '2':
+                    case 'CSV':
+                    case 'csv':
+                      exportDeliveryNoteAsCSV();
+                      break;
+                    case '3':
+                    case 'JSON':
+                    case 'json':
+                      exportDeliveryNoteAsJSON();
+                      break;
+                    default:
+                      alert('Invalid choice. Defaulting to PDF export.');
+                      exportDeliveryNoteAsPDF();
+                  }
+                  
                   closeDeliveryNoteOptionsDialog();
                 }}
                 className="w-full flex items-center justify-start"
