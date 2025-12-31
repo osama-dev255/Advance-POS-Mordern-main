@@ -917,8 +917,6 @@ Date: [DATE]`,
         
         saveInvoice(invoiceToSave);
         
-        alert(`Invoice ${invoiceData.invoiceNumber} saved successfully to Saved Invoices!`);
-        
         // Show the invoice options dialog after saving
         showInvoiceOptionsDialog();
         
@@ -966,8 +964,6 @@ Date: [DATE]`,
         };
         
         saveDelivery(deliveryToSave);
-        
-        alert(`Delivery Note ${deliveryNoteData.deliveryNoteNumber} saved successfully to Saved Deliveries!`);
         
         // Show the delivery note options dialog after saving
         showDeliveryNoteOptionsDialog();
@@ -1232,8 +1228,10 @@ Date: [DATE]`,
         
         alert(`Delivery Note ${deliveryNoteData.deliveryNoteNumber} saved successfully to Saved Deliveries!`);
         
-        // Show a success message and reset the form
-        resetDeliveryNoteData();
+        // Show the delivery note options dialog after saving
+        showDeliveryNoteOptionsDialog();
+        
+        // Don't reset here - let the user choose an option first
       } catch (error) {
         console.error('Error saving delivery:', error);
         alert('Error saving delivery. Please try again.');
@@ -3045,7 +3043,7 @@ Date: [DATE]`,
                     <Button variant="outline" onClick={() => setActiveTab("manage")}>
                       Back to Templates
                     </Button>
-                    {currentTemplate?.type !== "invoice" && (
+                    {currentTemplate?.type !== "invoice" && currentTemplate?.type !== "delivery-note" && (
                       <>
                         <Button onClick={() => {
                           if (currentTemplate?.type === "order-form") {
