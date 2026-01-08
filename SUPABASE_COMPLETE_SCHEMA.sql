@@ -437,7 +437,8 @@ INSERT INTO users (username, email, first_name, last_name, role, is_active) VALU
   ('admin', 'admin@pos.com', 'Admin', 'User', 'admin', true),
   ('manager', 'manager@pos.com', 'Manager', 'User', 'manager', true),
   ('cashier1', 'cashier1@pos.com', 'Cashier', 'One', 'cashier', true),
-  ('cashier2', 'cashier2@pos.com', 'Cashier', 'Two', 'cashier', true);
+  ('cashier2', 'cashier2@pos.com', 'Cashier', 'Two', 'cashier', true)
+ON CONFLICT (username) DO NOTHING;
 
 -- Insert sample products (using DO block to handle subquery safely)
 DO $$

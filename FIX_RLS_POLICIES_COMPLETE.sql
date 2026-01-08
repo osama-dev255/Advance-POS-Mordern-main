@@ -268,3 +268,30 @@ CREATE POLICY "Enable read access for all users" ON reports FOR SELECT USING (tr
 CREATE POLICY "Enable insert access for all users" ON reports FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable update access for all users" ON reports FOR UPDATE USING (true);
 CREATE POLICY "Enable delete access for all users" ON reports FOR DELETE USING (true);
+
+-- Enable RLS on saved_invoices and saved_delivery_notes tables if not already enabled
+ALTER TABLE saved_invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE saved_delivery_notes ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies for saved_invoices and saved_delivery_notes if they exist
+DROP POLICY IF EXISTS "select_own_saved_invoices" ON saved_invoices;
+DROP POLICY IF EXISTS "insert_own_saved_invoices" ON saved_invoices;
+DROP POLICY IF EXISTS "update_own_saved_invoices" ON saved_invoices;
+DROP POLICY IF EXISTS "delete_own_saved_invoices" ON saved_invoices;
+
+DROP POLICY IF EXISTS "select_own_saved_delivery_notes" ON saved_delivery_notes;
+DROP POLICY IF EXISTS "insert_own_saved_delivery_notes" ON saved_delivery_notes;
+DROP POLICY IF EXISTS "update_own_saved_delivery_notes" ON saved_delivery_notes;
+DROP POLICY IF EXISTS "delete_own_saved_delivery_notes" ON saved_delivery_notes;
+
+-- Create new policies for saved_invoices table
+CREATE POLICY "Enable read access for all users" ON saved_invoices FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON saved_invoices FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON saved_invoices FOR UPDATE USING (true);
+CREATE POLICY "Enable delete access for all users" ON saved_invoices FOR DELETE USING (true);
+
+-- Create new policies for saved_delivery_notes table
+CREATE POLICY "Enable read access for all users" ON saved_delivery_notes FOR SELECT USING (true);
+CREATE POLICY "Enable insert access for all users" ON saved_delivery_notes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update access for all users" ON saved_delivery_notes FOR UPDATE USING (true);
+CREATE POLICY "Enable delete access for all users" ON saved_delivery_notes FOR DELETE USING (true);
