@@ -444,7 +444,20 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
           total: totalWithTax,
           paymentMethod: paymentMethod,
           status: "completed",
-          itemsList: cart,
+          itemsList: cart.map(item => {
+            // Find the corresponding product to get unit information
+            const product = products.find(p => p.id === item.id);
+            return {
+              id: item.id,
+              name: item.name,
+              description: '',
+              quantity: item.quantity,
+              rate: item.price,
+              amount: item.price * item.quantity,
+              unit: product?.unit_of_measure || 'unit'
+            };
+          }),
+
           subtotal: subtotal,
           tax: tax,
           discount: discountAmount,

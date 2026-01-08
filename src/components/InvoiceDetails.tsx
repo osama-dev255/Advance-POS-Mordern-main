@@ -15,8 +15,10 @@ interface InvoiceItem {
   name: string;
   description?: string;
   quantity: number;
-  rate: number;
-  amount: number;
+  rate?: number;
+  amount?: number;
+  price?: number;  // For backward compatibility
+  unit?: string;
 }
 
 interface InvoiceDetailsProps {
@@ -182,8 +184,10 @@ export const InvoiceDetails = ({
               <table className="w-full">
                 <thead className="bg-muted">
                   <tr>
-                    <th className="text-left p-3">Product</th>
+                    <th className="text-left p-3">Item</th>
+                    <th className="text-left p-3">Description</th>
                     <th className="text-right p-3">Quantity</th>
+                    <th className="text-left p-3">Unit</th>
                     <th className="text-right p-3">Rate</th>
                     <th className="text-right p-3">Amount</th>
                   </tr>
@@ -191,10 +195,12 @@ export const InvoiceDetails = ({
                 <tbody>
                   {items.map((item, index) => (
                     <tr key={item.id || index} className={index % 2 === 0 ? "bg-muted/50" : ""}>
+                      <td className="p-3">{index + 1}</td>
                       <td className="p-3">{item.name}</td>
                       <td className="p-3 text-right">{item.quantity}</td>
-                      <td className="p-3 text-right">{formatCurrency(item.rate)}</td>
-                      <td className="p-3 text-right">{formatCurrency(item.amount)}</td>
+                      <td className="p-3">{item.unit || ''}</td>
+                      <td className="p-3 text-right">{formatCurrency(item.rate ?? item.price ?? 0)}</td>
+                      <td className="p-3 text-right">{formatCurrency(item.amount ?? (item.price != null && item.quantity != null ? item.price * item.quantity : 0))}</td>
                     </tr>
                   ))}
                 </tbody>

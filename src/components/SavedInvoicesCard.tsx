@@ -1,8 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { formatCurrency } from "@/lib/currency";
 import { FileText, Calendar, User, CreditCard, Eye, Download, Trash2, Printer } from "lucide-react";
+
+interface InvoiceItem {
+  id?: string;
+  name: string;
+  description?: string;
+  quantity: number;
+  rate?: number;
+  amount?: number;
+  price?: number;  // For backward compatibility
+  unit?: string;
+}
 
 interface SavedInvoice {
   id: string;
@@ -13,6 +25,7 @@ interface SavedInvoice {
   total: number;
   paymentMethod: string;
   status: "completed" | "pending" | "cancelled" | "refunded";
+  itemsList?: InvoiceItem[];
 }
 
 interface SavedInvoicesCardProps {
@@ -32,6 +45,8 @@ export const SavedInvoicesCard = ({
   onDeleteInvoice,
   className 
 }: SavedInvoicesCardProps) => {
+  const [expanded, setExpanded] = useState(false);
+
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "completed": return "default";
@@ -85,6 +100,60 @@ export const SavedInvoicesCard = ({
             <span className="text-muted-foreground">Payment:</span>
             <span className="capitalize">{invoice.paymentMethod}</span>
           </div>
+          
+          {/* Items Table Section */}
+          {invoice.itemsList && invoice.itemsList.length > 0 && (
+            <div className="pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full flex items-center justify-between"
+                onClick={() => setExpanded(!expanded)}
+              >
+                <span>Items Details</span>
+                <svg 
+                  className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </Button>
+              
+              {expanded && (
+                <div className="mt-3 border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-2 text-xs sm:text-sm">Item</th>
+                        <th className="text-left p-2 text-xs sm:text-sm">Description</th>
+                        <th className="text-right p-2 text-xs sm:text-sm">Qty</th>
+                        <th className="text-left p-2 text-xs sm:text-sm">Unit</th>
+                        <th className="text-right p-2 text-xs sm:text-sm">Rate</th>
+                        <th className="text-right p-2 text-xs sm:text-sm">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {invoice.itemsList.map((item, index) => (
+                        <tr 
+                          key={item.id || index} 
+                          className={index % 2 === 0 ? "bg-muted/50" : ""}
+                        >
+                          <td className="p-2 text-xs sm:text-sm">{index + 1}</td>
+                          <td className="p-2 text-xs sm:text-sm">{item.name}</td>
+                          <td className="p-2 text-right text-xs sm:text-sm">{item.quantity}</td>
+                          <td className="p-2 text-xs sm:text-sm">{item.unit || ''}</td>
+                          <td className="p-2 text-right text-xs sm:text-sm">{formatCurrency(item.rate ?? item.price ?? 0)}</td>
+                          <td className="p-2 text-right text-xs sm:text-sm font-medium">{formatCurrency(item.amount ?? (item.price != null && item.quantity != null ? item.price * item.quantity : 0))}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
           
           <div className="flex gap-2 pt-2">
             <Button 
