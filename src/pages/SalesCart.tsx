@@ -463,6 +463,9 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
           discount: discountAmount,
           amountReceived: paymentMethod === "debt" ? (parseFloat(amountReceived) || 0) : (parseFloat(amountReceived) || 0),
           change: paymentMethod === "debt" ? (parseFloat(amountReceived) || 0) - totalWithTax : change,
+          businessName: localStorage.getItem('businessName'),
+          businessAddress: localStorage.getItem('businessAddress'),
+          businessPhone: localStorage.getItem('businessPhone'),
         };
         
         await saveInvoice(invoiceToSave);

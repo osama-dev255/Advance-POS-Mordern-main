@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, Package, CreditCard, FileText, Printer, Download, Mail, Phone } from "lucide-react";
+import { Calendar, User, Package, CreditCard, FileText, Printer, Download, Mail, Phone, Building } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 
 interface Customer {
@@ -36,6 +36,9 @@ interface InvoiceDetailsProps {
   notes?: string;
   amountReceived: number;
   change: number;
+  businessName?: string;
+  businessAddress?: string;
+  businessPhone?: string;
   onBack: () => void;
   onPrint?: () => void;
   onDownload?: () => void;
@@ -56,6 +59,9 @@ export const InvoiceDetails = ({
   notes,
   amountReceived,
   change,
+  businessName: propBusinessName,
+  businessAddress: propBusinessAddress,
+  businessPhone: propBusinessPhone,
   onBack,
   onPrint,
   onDownload
@@ -101,6 +107,11 @@ export const InvoiceDetails = ({
     }
   };
 
+  // Use business information from the invoice data if available, otherwise fallback to current settings from localStorage
+  const businessName = propBusinessName || localStorage.getItem('businessName') || 'Your Business Name';
+  const businessAddress = propBusinessAddress || localStorage.getItem('businessAddress') || '123 Business Street';
+  const businessPhone = propBusinessPhone || localStorage.getItem('businessPhone') || '(555) 123-4567';
+
   return (
     <div className="max-w-4xl mx-auto">
       <Card>
@@ -124,6 +135,28 @@ export const InvoiceDetails = ({
         
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Business Information */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                Business Information
+              </h3>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Name:</span>
+                  <span>{businessName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Address:</span>
+                  <span>{businessAddress}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Phone:</span>
+                  <span>{businessPhone}</span>
+                </div>
+              </div>
+            </div>
+            
             {/* Customer Information */}
             <div>
               <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">

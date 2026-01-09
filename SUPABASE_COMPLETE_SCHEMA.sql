@@ -452,9 +452,14 @@ BEGIN
   SELECT id INTO sports_outdoors_id FROM categories WHERE name = 'Sports & Outdoors' LIMIT 1;
   
   INSERT INTO products (name, category_id, barcode, sku, selling_price, cost_price, stock_quantity) VALUES 
-    ('Wireless Headphones', electronics_id, '123456789012', 'WH-001', 99.99, 45.00, 25),
-    ('Coffee Maker', home_garden_id, '234567890123', 'CM-002', 79.99, 35.00, 15),
-    ('Running Shoes', sports_outdoors_id, '345678901234', 'RS-003', 129.99, 65.00, 30);
+    ('Wireless Headphones', electronics_id, '123456789012', 'WH-001', 99.99, 45.00, 25)
+  ON CONFLICT (barcode) DO NOTHING;
+  INSERT INTO products (name, category_id, barcode, sku, selling_price, cost_price, stock_quantity) VALUES 
+    ('Coffee Maker', home_garden_id, '234567890123', 'CM-002', 79.99, 35.00, 15)
+  ON CONFLICT (barcode) DO NOTHING;
+  INSERT INTO products (name, category_id, barcode, sku, selling_price, cost_price, stock_quantity) VALUES 
+    ('Running Shoes', sports_outdoors_id, '345678901234', 'RS-003', 129.99, 65.00, 30)
+  ON CONFLICT (barcode) DO NOTHING;
 END $$;
 
 -- 25. Saved Invoices
@@ -474,6 +479,9 @@ CREATE TABLE IF NOT EXISTS saved_invoices (
   discount DECIMAL(10,2) DEFAULT 0.00,
   amount_received DECIMAL(10,2) DEFAULT 0.00,
   change DECIMAL(10,2) DEFAULT 0.00,
+  business_name VARCHAR(255),
+  business_address TEXT,
+  business_phone VARCHAR(50),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

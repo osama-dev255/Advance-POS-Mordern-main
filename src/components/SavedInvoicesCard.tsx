@@ -26,6 +26,14 @@ interface SavedInvoice {
   paymentMethod: string;
   status: "completed" | "pending" | "cancelled" | "refunded";
   itemsList?: InvoiceItem[];
+  subtotal?: number;
+  tax?: number;
+  discount?: number;
+  amountReceived?: number;
+  change?: number;
+  businessName?: string;
+  businessAddress?: string;
+  businessPhone?: string;
 }
 
 interface SavedInvoicesCardProps {

@@ -127,6 +127,9 @@ export const SavedInvoicesSection = ({ onBack, onLogout, username }: SavedInvoic
             status={viewingInvoice.status as "completed" | "pending" | "cancelled" | "refunded"}
             amountReceived={viewingInvoice.amountReceived || viewingInvoice.total}
             change={viewingInvoice.change || 0}
+            businessName={viewingInvoice.businessName}
+            businessAddress={viewingInvoice.businessAddress}
+            businessPhone={viewingInvoice.businessPhone}
             onBack={() => setViewingInvoice(null)}
             onPrint={() => handlePrintInvoice(viewingInvoice)}
             onDownload={() => handleDownloadInvoice(viewingInvoice)}
@@ -208,7 +211,13 @@ export const SavedInvoicesSection = ({ onBack, onLogout, username }: SavedInvoic
                       items: invoice.items,
                       total: invoice.total,
                       paymentMethod: invoice.paymentMethod,
-                      status: invoice.status
+                      status: invoice.status,
+                      itemsList: invoice.itemsList,
+                      subtotal: invoice.subtotal,
+                      tax: invoice.tax,
+                      discount: invoice.discount,
+                      amountReceived: invoice.amountReceived,
+                      change: invoice.change
                     }}
                     onViewDetails={() => handleViewInvoice(invoice)}
                     onPrintInvoice={() => handlePrintInvoice(invoice)}

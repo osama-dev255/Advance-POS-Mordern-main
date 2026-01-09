@@ -17,6 +17,9 @@ export interface InvoiceData {
   discount?: number;
   amountReceived?: number;
   change?: number;
+  businessName?: string;
+  businessAddress?: string;
+  businessPhone?: string;
 }
 
 export const saveInvoice = async (invoice: InvoiceData): Promise<void> => {
@@ -45,7 +48,10 @@ export const saveInvoice = async (invoice: InvoiceData): Promise<void> => {
           tax: invoice.tax,
           discount: invoice.discount,
           amount_received: invoice.amountReceived,
-          change: invoice.change
+          change: invoice.change,
+          business_name: invoice.businessName,
+          business_address: invoice.businessAddress,
+          business_phone: invoice.businessPhone
         });
         
       if (error) {
@@ -92,7 +98,10 @@ export const getSavedInvoices = async (): Promise<InvoiceData[]> => {
         tax: dbInvoice.tax,
         discount: dbInvoice.discount,
         amountReceived: dbInvoice.amount_received,
-        change: dbInvoice.change
+        change: dbInvoice.change,
+        businessName: dbInvoice.business_name,
+        businessAddress: dbInvoice.business_address,
+        businessPhone: dbInvoice.business_phone
       }));
     } else {
       // If not authenticated, use localStorage
@@ -157,7 +166,10 @@ export const updateInvoice = async (updatedInvoice: InvoiceData): Promise<void> 
           tax: updatedInvoice.tax,
           discount: updatedInvoice.discount,
           amount_received: updatedInvoice.amountReceived,
-          change: updatedInvoice.change
+          change: updatedInvoice.change,
+          business_name: updatedInvoice.businessName,
+          business_address: updatedInvoice.businessAddress,
+          business_phone: updatedInvoice.businessPhone
         })
         .eq('user_id', user.id)
         .eq('id', updatedInvoice.id);
