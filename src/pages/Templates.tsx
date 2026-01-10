@@ -43,7 +43,7 @@ import { SavedDeliveriesSection } from '@/components/SavedDeliveriesSection';
 interface Template {
   id: string;
   name: string;
-  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher";
+  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher" | "customer-settlement";
   description: string;
   content: string;
   lastModified: string;
@@ -86,6 +86,21 @@ interface DeliveryNoteData {
   receivedByName: string;
   receivedByDate: string;
   timestamp?: string;
+}
+
+interface CustomerSettlementData {
+  customerName: string;
+  customerId: string;
+  customerPhone: string;
+  customerEmail: string;
+  referenceNumber: string;
+  settlementAmount: number;
+  paymentMethod: string;
+  cashierName: string;
+  previousBalance: number;
+  amountPaid: number;
+  newBalance: number;
+  notes: string;
 }
 
 interface SavedDeliveryNote {
@@ -637,6 +652,42 @@ Signature: _________________
 Date: [DATE]`,
       lastModified: "2023-08-15",
       isActive: false
+    },
+    {
+      id: "12",
+      name: "Customer Settlements Template",
+      type: "customer-settlement",
+      description: "Professional template for customer debt settlements and payment receipts",
+      content: `CUSTOMER SETTLEMENT RECEIPT
+Receipt #[RECEIPT_NUMBER]
+Date: [DATE]
+Time: [TIME]
+
+Customer Information:
+Name: [CUSTOMER_NAME]
+ID: [CUSTOMER_ID]
+Phone: [CUSTOMER_PHONE]
+Email: [CUSTOMER_EMAIL]
+
+Settlement Details:
+Reference: [REFERENCE_NUMBER]
+Amount: [SETTLEMENT_AMOUNT]
+Payment Method: [PAYMENT_METHOD]
+
+Transaction Summary:
+Previous Balance: [PREVIOUS_BALANCE]
+Amount Paid: [AMOUNT_PAID]
+New Balance: [NEW_BALANCE]
+
+Notes:
+[SETTLEMENT_NOTES]
+
+Processed by: [CASHIER_NAME]
+
+Thank you for your payment!
+We appreciate your business.`,
+      lastModified: "2023-08-15",
+      isActive: false
     }
   ]);
   
@@ -660,7 +711,7 @@ Date: [DATE]`,
       { id: "2", description: "Sample Product 2", quantity: 5, unit: "boxes", delivered: 5, remarks: "Fragile" },
       { id: "3", description: "Sample Product 3", quantity: 2, unit: "units", delivered: 2, remarks: "" }
     ],
-    deliveryNotes: "Please handle with care. Fragile items included.\nSignature required upon delivery.",
+    deliveryNotes: ".\nSignature required upon delivery.",
     totalItems: 3,
     totalQuantity: 17,
     totalPackages: 3,
@@ -704,7 +755,23 @@ Date: [DATE]`,
 
   const [deliveryNoteName, setDeliveryNoteName] = useState<string>("");
   const [reportName, setReportName] = useState<string>("");
-  
+  const [settlementReference, setSettlementReference] = useState<string>("");
+    
+  const [customerSettlementData, setCustomerSettlementData] = useState<CustomerSettlementData>({
+    customerName: "Customer Name",
+    customerId: "CUST-001",
+    customerPhone: "(555) 123-4567",
+    customerEmail: "customer@example.com",
+    referenceNumber: "SET-001",
+    settlementAmount: 0,
+    paymentMethod: "Cash",
+    cashierName: "Cashier Name",
+    previousBalance: 0,
+    amountPaid: 0,
+    newBalance: 0,
+    notes: ""
+  });
+    
   const [purchaseOrderData, setPurchaseOrderData] = useState<PurchaseOrderData>({
     businessName: "Your Business Name",
     businessAddress: "123 Business Street",
@@ -761,8 +828,8 @@ Date: [DATE]`,
     amountPaid: 0.00,
     creditBroughtForward: 0.00,
     terms: "Net 30",
-    notes: "Thank you for your business! Payment due within 30 days.",
-    paymentOptions: "Bank Transfer, Check, or Credit Card",
+    notes: "Thank you for your business!.",
+    paymentOptions: "Cash , Bank Transfer, Check, or Credit Card",
     checkPayableMessage: "Please make checks payable to Your Business Name",
     timestamp: new Date().toLocaleString()
   };
@@ -879,7 +946,7 @@ Date: [DATE]`,
 
   const handlePreviewTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
-    if (template && (template.type === "delivery-note" || template.type === "order-form" || template.type === "invoice" || template.type === "expense-voucher" || template.type === "salary-slip" || template.type === "complimentary-goods" || template.type === "report")) {
+    if (template && (template.type === "delivery-note" || template.type === "order-form" || template.type === "invoice" || template.type === "expense-voucher" || template.type === "salary-slip" || template.type === "complimentary-goods" || template.type === "report" || template.type === "customer-settlement")) {
       setViewingTemplate(templateId);
       setActiveTab("preview");
     } else {
@@ -2967,6 +3034,14 @@ Date: [DATE]`,
     }));
   };
   
+  // Handle customer settlement changes
+  const handleCustomerSettlementChange = (field: keyof CustomerSettlementData, value: string | number) => {
+    setCustomerSettlementData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+  
   // Add new complimentary goods item
   const handleAddComplimentaryGoodsItem = () => {
     setComplimentaryGoodsData(prev => ({
@@ -3137,7 +3212,7 @@ Date: [DATE]`,
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">
-                    {currentTemplate?.type === "order-form" ? "Purchase Order Preview" : currentTemplate?.type === "invoice" ? "Invoice Preview" : currentTemplate?.type === "expense-voucher" ? "Expense Voucher Preview" : currentTemplate?.type === "salary-slip" ? "Salary Slip Preview" : currentTemplate?.type === "complimentary-goods" ? "Complimentary Goods Preview" : currentTemplate?.type === "report" ? "Report Template Preview" : "Delivery Note Preview"}
+                    {currentTemplate?.type === "order-form" ? "Purchase Order Preview" : currentTemplate?.type === "invoice" ? "Invoice Preview" : currentTemplate?.type === "expense-voucher" ? "Expense Voucher Preview" : currentTemplate?.type === "salary-slip" ? "Salary Slip Preview" : currentTemplate?.type === "complimentary-goods" ? "Complimentary Goods Preview" : currentTemplate?.type === "report" ? "Report Template Preview" : currentTemplate?.type === "customer-settlement" ? "Customer Settlement Preview" : "Delivery Note Preview"}
                   </h3>
                   <div className="flex gap-2">
                     {currentTemplate?.type === "order-form" ? (
@@ -3178,6 +3253,14 @@ Date: [DATE]`,
                         placeholder="Report Name"
                         value={reportName}
                         onChange={(e) => setReportName(e.target.value)}
+                        className="w-48 h-10"
+                      />
+                    ) : currentTemplate?.type === "customer-settlement" ? (
+                      <Input
+                        type="text"
+                        placeholder="Settlement Reference"
+                        value={settlementReference}
+                        onChange={(e) => setSettlementReference(e.target.value)}
                         className="w-48 h-10"
                       />
                     ) : (
@@ -3234,6 +3317,8 @@ Date: [DATE]`,
                         alert(`Complimentary Goods Voucher ${complimentaryGoodsData.voucherNumber} saved successfully!`);
                       } else if (currentTemplate?.type === "report") {
                         alert(`Report Template ${reportName} saved successfully!`);
+                      } else if (currentTemplate?.type === "customer-settlement") {
+                        alert(`Customer Settlement ${settlementReference} saved successfully!`);
                       } else {
                         handleSaveDeliveryNote();
                       }
@@ -3254,6 +3339,8 @@ Date: [DATE]`,
                           } else if (currentTemplate?.type === "complimentary-goods") {
                             window.print();
                           } else if (currentTemplate?.type === "report") {
+                            window.print();
+                          } else if (currentTemplate?.type === "customer-settlement") {
                             window.print();
                           } else {
                             handlePrintDeliveryNote();
@@ -3293,6 +3380,17 @@ Date: [DATE]`,
                               const link = document.createElement('a');
                               link.href = url;
                               link.download = `Complimentary_Goods_Voucher_${complimentaryGoodsData.voucherNumber}.html`;
+                              link.click();
+                              URL.revokeObjectURL(url);
+                            }
+                          } else if (currentTemplate?.type === "customer-settlement") {
+                            const content = document.getElementById('template-preview-content');
+                            if (content) {
+                              const blob = new Blob([content.innerHTML], { type: 'text/html' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `Customer_Settlement_${settlementReference}.html`;
                               link.click();
                               URL.revokeObjectURL(url);
                             }
@@ -4255,6 +4353,147 @@ Date: [DATE]`,
                               </div>
                             </div>
                           </div>
+                        </div>
+                      </div>
+                    ) : currentTemplate?.type === "customer-settlement" ? (
+                      // Customer Settlement Content
+                      <div className="space-y-6">
+                        {/* Header */}
+                        <div className="text-center border-b-2 border-gray-800 pb-2">
+                          <h2 className="text-2xl font-bold">CUSTOMER SETTLEMENT RECEIPT</h2>
+                          <p className="text-sm">Receipt #{settlementReference || 'RECEIPT_NUMBER'}</p>
+                          <p className="text-sm">Date: {new Date().toLocaleDateString()}</p>
+                          <p className="text-sm">Time: {new Date().toLocaleTimeString()}</p>
+                        </div>
+                                            
+                        {/* Customer Information */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div>
+                            <div className="font-bold mb-1">CUSTOMER INFORMATION:</div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Name:</span>
+                              <Input 
+                                value={customerSettlementData.customerName}
+                                onChange={(e) => handleCustomerSettlementChange("customerName", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">ID:</span>
+                              <Input 
+                                value={customerSettlementData.customerId}
+                                onChange={(e) => handleCustomerSettlementChange("customerId", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Phone:</span>
+                              <Input 
+                                value={customerSettlementData.customerPhone}
+                                onChange={(e) => handleCustomerSettlementChange("customerPhone", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Email:</span>
+                              <Input 
+                                value={customerSettlementData.customerEmail}
+                                onChange={(e) => handleCustomerSettlementChange("customerEmail", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                          </div>
+                                              
+                          <div>
+                            <div className="font-bold mb-1">SETTLEMENT DETAILS:</div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Reference:</span>
+                              <Input 
+                                value={customerSettlementData.referenceNumber}
+                                onChange={(e) => handleCustomerSettlementChange("referenceNumber", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Amount:</span>
+                              <Input 
+                                type="number" 
+                                step="0.01"
+                                value={customerSettlementData.settlementAmount}
+                                onChange={(e) => handleCustomerSettlementChange("settlementAmount", parseFloat(e.target.value) || 0)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Payment Method:</span>
+                              <Input 
+                                value={customerSettlementData.paymentMethod}
+                                onChange={(e) => handleCustomerSettlementChange("paymentMethod", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Processed by:</span>
+                              <Input 
+                                value={customerSettlementData.cashierName}
+                                onChange={(e) => handleCustomerSettlementChange("cashierName", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                                            
+                        {/* Transaction Summary */}
+                        <div className="space-y-4">
+                          <div className="font-bold mb-2">TRANSACTION SUMMARY:</div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="border p-3 rounded">
+                              <div className="text-sm font-medium">Previous Balance</div>
+                              <Input 
+                                type="number" 
+                                step="0.01"
+                                value={customerSettlementData.previousBalance}
+                                onChange={(e) => handleCustomerSettlementChange("previousBalance", parseFloat(e.target.value) || 0)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="border p-3 rounded">
+                              <div className="text-sm font-medium">Amount Paid</div>
+                              <Input 
+                                type="number" 
+                                step="0.01"
+                                value={customerSettlementData.amountPaid}
+                                onChange={(e) => handleCustomerSettlementChange("amountPaid", parseFloat(e.target.value) || 0)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="border p-3 rounded">
+                              <div className="text-sm font-medium">New Balance</div>
+                              <Input 
+                                type="number" 
+                                step="0.01"
+                                value={customerSettlementData.newBalance}
+                                onChange={(e) => handleCustomerSettlementChange("newBalance", parseFloat(e.target.value) || 0)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                                            
+                        {/* Notes */}
+                        <div>
+                          <div className="font-bold mb-2">NOTES:</div>
+                          <Textarea
+                            value={customerSettlementData.notes}
+                            onChange={(e) => handleCustomerSettlementChange("notes", e.target.value)}
+                            className="min-h-[60px] p-2 border rounded bg-gray-50 w-full"
+                          />
+                        </div>
+                                            
+                        {/* Footer */}
+                        <div className="text-center mt-8 pt-4 border-t border-gray-300">
+                          <div className="text-sm font-bold">Thank you for your payment!</div>
+                          <div className="text-sm">We appreciate your business.</div>
                         </div>
                       </div>
                     ) : (
