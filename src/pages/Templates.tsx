@@ -39,6 +39,7 @@ import { ExportUtils } from '@/utils/exportUtils';
 import WhatsAppUtils from '@/utils/whatsappUtils';
 import { saveInvoice, InvoiceData as SavedInvoiceData } from '@/utils/invoiceUtils';
 import { saveDelivery, DeliveryData } from '@/utils/deliveryUtils';
+import { saveCustomerSettlement, CustomerSettlementData as SavedCustomerSettlementData } from '@/utils/customerSettlementUtils';
 import { SavedDeliveriesSection } from '@/components/SavedDeliveriesSection';
 
 interface Template {
@@ -102,6 +103,8 @@ interface CustomerSettlementData {
   amountPaid: number;
   newBalance: number;
   notes: string;
+  date?: string;
+  time?: string;
 }
 
 interface SavedDeliveryNote {
@@ -839,6 +842,7 @@ We appreciate your business.`,
   
   const [showInvoiceOptions, setShowInvoiceOptions] = useState(false);
   const [showDeliveryNoteOptions, setShowDeliveryNoteOptions] = useState(false);
+  const [showCustomerSettlementOptions, setShowCustomerSettlementOptions] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   
@@ -1308,6 +1312,147 @@ We appreciate your business.`,
     };
     
     ExportUtils.exportToJSON([exportData], `delivery-note-${deliveryNoteData.deliveryNoteNumber}`);
+  };
+  
+  // Function to export customer settlement as PDF
+  const exportCustomerSettlementAsPDF = () => {
+    const exportData = {
+      customerSettlementInfo: {
+        customerName: customerSettlementData.customerName,
+        customerId: customerSettlementData.customerId,
+        customerPhone: customerSettlementData.customerPhone,
+        customerEmail: customerSettlementData.customerEmail,
+        referenceNumber: customerSettlementData.referenceNumber,
+        settlementAmount: customerSettlementData.settlementAmount,
+        paymentMethod: customerSettlementData.paymentMethod,
+        cashierName: customerSettlementData.cashierName,
+        previousBalance: customerSettlementData.previousBalance,
+        amountPaid: customerSettlementData.amountPaid,
+        newBalance: customerSettlementData.newBalance,
+        notes: customerSettlementData.notes,
+        date: customerSettlementData.date || new Date().toISOString().split('T')[0],
+        time: customerSettlementData.time || new Date().toLocaleTimeString(),
+      },
+      timestamp: new Date().toISOString(),
+    };
+    
+    // Create a simple array structure for the PDF
+    const pdfRows = [];
+    
+    // Add header
+    pdfRows.push(['Field', 'Value']);
+    pdfRows.push(['Customer Name', exportData.customerSettlementInfo.customerName]);
+    pdfRows.push(['Customer ID', exportData.customerSettlementInfo.customerId]);
+    pdfRows.push(['Customer Phone', exportData.customerSettlementInfo.customerPhone]);
+    pdfRows.push(['Customer Email', exportData.customerSettlementInfo.customerEmail]);
+    pdfRows.push(['Reference Number', exportData.customerSettlementInfo.referenceNumber]);
+    pdfRows.push(['Settlement Amount', exportData.customerSettlementInfo.settlementAmount.toString()]);
+    pdfRows.push(['Payment Method', exportData.customerSettlementInfo.paymentMethod]);
+    pdfRows.push(['Cashier Name', exportData.customerSettlementInfo.cashierName]);
+    pdfRows.push(['Previous Balance', exportData.customerSettlementInfo.previousBalance.toString()]);
+    pdfRows.push(['Amount Paid', exportData.customerSettlementInfo.amountPaid.toString()]);
+    pdfRows.push(['New Balance', exportData.customerSettlementInfo.newBalance.toString()]);
+    pdfRows.push(['Date', exportData.customerSettlementInfo.date]);
+    pdfRows.push(['Time', exportData.customerSettlementInfo.time]);
+    pdfRows.push(['Notes', exportData.customerSettlementInfo.notes]);
+    
+    // Convert to object format for ExportUtils
+    const formattedData = pdfRows.map(row => {
+      if (Array.isArray(row)) {
+        const obj: any = {};
+        row.forEach((val, idx) => {
+          obj[`Column ${idx + 1}`] = val;
+        });
+        return obj;
+      } else {
+        return row;
+      }
+    });
+    
+    ExportUtils.exportToPDF(formattedData, `customer-settlement-${exportData.customerSettlementInfo.referenceNumber}`, `Customer Settlement - ${exportData.customerSettlementInfo.referenceNumber}`);
+  };
+  
+  // Function to export customer settlement as CSV
+  const exportCustomerSettlementAsCSV = () => {
+    const exportData = {
+      customerSettlementInfo: {
+        customerName: customerSettlementData.customerName,
+        customerId: customerSettlementData.customerId,
+        customerPhone: customerSettlementData.customerPhone,
+        customerEmail: customerSettlementData.customerEmail,
+        referenceNumber: customerSettlementData.referenceNumber,
+        settlementAmount: customerSettlementData.settlementAmount,
+        paymentMethod: customerSettlementData.paymentMethod,
+        cashierName: customerSettlementData.cashierName,
+        previousBalance: customerSettlementData.previousBalance,
+        amountPaid: customerSettlementData.amountPaid,
+        newBalance: customerSettlementData.newBalance,
+        notes: customerSettlementData.notes,
+        date: customerSettlementData.date || new Date().toISOString().split('T')[0],
+        time: customerSettlementData.time || new Date().toLocaleTimeString(),
+      },
+      timestamp: new Date().toISOString(),
+    };
+    
+    // Create a simple array structure for the CSV
+    const csvRows = [];
+    
+    // Add header
+    csvRows.push(['Field', 'Value']);
+    csvRows.push(['Customer Name', exportData.customerSettlementInfo.customerName]);
+    csvRows.push(['Customer ID', exportData.customerSettlementInfo.customerId]);
+    csvRows.push(['Customer Phone', exportData.customerSettlementInfo.customerPhone]);
+    csvRows.push(['Customer Email', exportData.customerSettlementInfo.customerEmail]);
+    csvRows.push(['Reference Number', exportData.customerSettlementInfo.referenceNumber]);
+    csvRows.push(['Settlement Amount', exportData.customerSettlementInfo.settlementAmount.toString()]);
+    csvRows.push(['Payment Method', exportData.customerSettlementInfo.paymentMethod]);
+    csvRows.push(['Cashier Name', exportData.customerSettlementInfo.cashierName]);
+    csvRows.push(['Previous Balance', exportData.customerSettlementInfo.previousBalance.toString()]);
+    csvRows.push(['Amount Paid', exportData.customerSettlementInfo.amountPaid.toString()]);
+    csvRows.push(['New Balance', exportData.customerSettlementInfo.newBalance.toString()]);
+    csvRows.push(['Date', exportData.customerSettlementInfo.date]);
+    csvRows.push(['Time', exportData.customerSettlementInfo.time]);
+    csvRows.push(['Notes', exportData.customerSettlementInfo.notes]);
+    
+    // Convert to object format for ExportUtils
+    const formattedData = csvRows.map(row => {
+      if (Array.isArray(row)) {
+        const obj: any = {};
+        row.forEach((val, idx) => {
+          obj[`Column ${idx + 1}`] = val;
+        });
+        return obj;
+      } else {
+        return row;
+      }
+    });
+    
+    ExportUtils.exportToCSV(formattedData, `customer-settlement-${exportData.customerSettlementInfo.referenceNumber}`);
+  };
+  
+  // Function to export customer settlement as JSON
+  const exportCustomerSettlementAsJSON = () => {
+    const exportData = {
+      customerSettlementInfo: {
+        customerName: customerSettlementData.customerName,
+        customerId: customerSettlementData.customerId,
+        customerPhone: customerSettlementData.customerPhone,
+        customerEmail: customerSettlementData.customerEmail,
+        referenceNumber: customerSettlementData.referenceNumber,
+        settlementAmount: customerSettlementData.settlementAmount,
+        paymentMethod: customerSettlementData.paymentMethod,
+        cashierName: customerSettlementData.cashierName,
+        previousBalance: customerSettlementData.previousBalance,
+        amountPaid: customerSettlementData.amountPaid,
+        newBalance: customerSettlementData.newBalance,
+        notes: customerSettlementData.notes,
+        date: customerSettlementData.date || new Date().toISOString().split('T')[0],
+        time: customerSettlementData.time || new Date().toLocaleTimeString(),
+      },
+      timestamp: new Date().toISOString(),
+    };
+    
+    ExportUtils.exportToJSON([exportData], `customer-settlement-${exportData.customerSettlementInfo.referenceNumber}`);
   };
   
   const handleDeleteTemplate = (templateId: string) => {
@@ -2340,6 +2485,23 @@ We appreciate your business.`,
   // Close delivery note options dialog
   const closeDeliveryNoteOptionsDialog = () => {
     setShowDeliveryNoteOptions(false);
+  };
+  
+  // Show customer settlement options dialog
+  const showCustomerSettlementOptionsDialog = () => {
+    // Update customer settlement date and time to current date/time when saving
+    setCustomerSettlementData(prev => ({
+      ...prev,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString()
+    }));
+    
+    setShowCustomerSettlementOptions(true);
+  };
+  
+  // Close customer settlement options dialog
+  const closeCustomerSettlementOptionsDialog = () => {
+    setShowCustomerSettlementOptions(false);
   };
   
   // Function to generate clean invoice HTML for printing
@@ -3564,7 +3726,34 @@ We appreciate your business.`,
                       } else if (currentTemplate?.type === "report") {
                         alert(`Report Template ${reportName} saved successfully!`);
                       } else if (currentTemplate?.type === "customer-settlement") {
-                        alert(`Customer Settlement ${settlementReference} saved successfully!`);
+                        try {
+                          // Prepare customer settlement data for saving
+                          const settlementToSave: SavedCustomerSettlementData = {
+                            id: Date.now().toString(), // Generate unique ID
+                            customerName: customerSettlementData.customerName,
+                            customerId: customerSettlementData.customerId,
+                            customerPhone: customerSettlementData.customerPhone,
+                            customerEmail: customerSettlementData.customerEmail,
+                            referenceNumber: customerSettlementData.referenceNumber,
+                            settlementAmount: customerSettlementData.settlementAmount,
+                            paymentMethod: customerSettlementData.paymentMethod,
+                            cashierName: customerSettlementData.cashierName,
+                            previousBalance: customerSettlementData.previousBalance,
+                            amountPaid: customerSettlementData.amountPaid,
+                            newBalance: customerSettlementData.newBalance,
+                            notes: customerSettlementData.notes,
+                            date: new Date().toISOString().split('T')[0], // Current date
+                            time: new Date().toLocaleTimeString() // Current time
+                          };
+                          
+                          await saveCustomerSettlement(settlementToSave);
+                          
+                          // Show the customer settlement options dialog after saving
+                          showCustomerSettlementOptionsDialog();
+                        } catch (error) {
+                          console.error('Error saving customer settlement:', error);
+                          alert('Error saving customer settlement. Please try again.');
+                        }
                       } else {
                         handleSaveDeliveryNote();
                       }
@@ -5525,6 +5714,144 @@ Enter choice (1-3):`);
             <div className="mt-4 flex justify-end">
               <Button 
                 onClick={closeDeliveryNoteOptionsDialog}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Customer Settlement Options Dialog */}
+      {showCustomerSettlementOptions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold mb-4">Customer Settlements Options</h3>
+            <p className="mb-4">Choose an action for your Settlements:</p>
+            
+            <div className="space-y-2">
+              <Button 
+                onClick={() => {
+                  // Print functionality for customer settlement
+                  window.print();
+                  closeCustomerSettlementOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print Settlement
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Download functionality for customer settlement
+                  alert('Downloading customer settlement...');
+                  closeCustomerSettlementOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                DownloadSettlement
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Share functionality for customer settlement
+                  try {
+                    // Generate a shareable URL for the customer settlement
+                    const shareData = {
+                      title: `Customer Settlement ${customerSettlementData.referenceNumber}`,
+                      text: `Customer Settlement #${customerSettlementData.referenceNumber} for customer ${customerSettlementData.customerName}`,
+                      url: window.location.href // In a real app, this would be a specific settlement URL
+                    };
+                    
+                    // Use the Web Share API if available
+                    if (navigator.share) {
+                      navigator.share(shareData)
+                        .then(() => console.log('Shared successfully'))
+                        .catch((error) => {
+                          console.log('Sharing failed:', error);
+                          // Fallback to copying to clipboard
+                          try {
+                            // Try to copy the URL to clipboard
+                            navigator.clipboard.writeText(shareData.url || window.location.href)
+                              .then(() => {
+                                alert('Customer settlement link copied to clipboard! You can now share it with others.');
+                              })
+                              .catch(err => {
+                                console.error('Failed to copy: ', err);
+                                // If clipboard fails, show the URL to the user
+                                const url = prompt('Copy this link to share the customer settlement:', shareData.url || window.location.href);
+                              });
+                          } catch (err) {
+                            console.error('Fallback sharing failed: ', err);
+                            alert('Could not share the customer settlement. Please copy the URL manually.');
+                          }
+                        });
+                    } else {
+                      // Fallback to copying to clipboard
+                      try {
+                        // Try to copy the URL to clipboard
+                        navigator.clipboard.writeText(shareData.url || window.location.href)
+                          .then(() => {
+                            alert('Customer settlement link copied to clipboard! You can now share it with others.');
+                          })
+                          .catch(err => {
+                            console.error('Failed to copy: ', err);
+                            // If clipboard fails, show the URL to the user
+                            const url = prompt('Copy this link to share the customer settlement:', shareData.url || window.location.href);
+                          });
+                      } catch (err) {
+                        console.error('Fallback sharing failed: ', err);
+                        alert('Could not share the customer settlement. Please copy the URL manually.');
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error sharing customer settlement:', error);
+                    alert('Error sharing customer settlement. Please try again.');
+                  }
+                  closeCustomerSettlementOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Share className="h-4 w-4 mr-2" />
+                Share Settlement
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Export functionality for customer settlement
+                  // Allow user to export in different formats
+                  const exportOptions = [
+                    { name: 'PDF', action: () => exportCustomerSettlementAsPDF() },
+                    { name: 'CSV', action: () => exportCustomerSettlementAsCSV() },
+                    { name: 'JSON', action: () => exportCustomerSettlementAsJSON() },
+                  ];
+                  
+                  // Show export options to user
+                  const exportChoice = prompt(`Choose export format:
+1. PDF
+2. CSV
+3. JSON
+Enter choice (1-3):`);
+                  
+                  closeCustomerSettlementOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                ExportSettlement
+              </Button>
+            </div>
+            
+            <div className="mt-4 flex justify-end">
+              <Button 
+                onClick={closeCustomerSettlementOptionsDialog}
                 variant="outline"
               >
                 Cancel
