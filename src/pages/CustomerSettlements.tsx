@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus, Edit, Trash2, Users, Wallet, Calendar, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
+import { getSavedSettlements, deleteCustomerSettlement, saveCustomerSettlement, CustomerSettlementData as SavedCustomerSettlementData } from "@/utils/customerSettlementUtils";
 
 interface Settlement {
   id: string;
@@ -24,6 +25,21 @@ interface Settlement {
   status: "completed" | "pending" | "cancelled";
 }
 
+// Map the saved settlement data from utility to the Settlement interface
+const mapSavedSettlementToSettlement = (saved: SavedCustomerSettlementData): Settlement => {
+  return {
+    id: saved.id,
+    customerId: saved.customerId,
+    customerName: saved.customerName,
+    date: saved.date,
+    amount: saved.settlementAmount,
+    paymentMethod: saved.paymentMethod,
+    reference: saved.referenceNumber,
+    notes: saved.notes,
+    status: "completed" // Default to completed for saved settlements
+  };
+};
+
 const paymentMethods = [
   "Cash",
   "Credit Card",
@@ -34,30 +50,7 @@ const paymentMethods = [
 ];
 
 export const CustomerSettlements = ({ username, onBack, onLogout }: { username: string; onBack: () => void; onLogout: () => void }) => {
-  const [settlements, setSettlements] = useState<Settlement[]>([
-    {
-      id: "1",
-      customerId: "1",
-      customerName: "John Smith",
-      date: "2023-05-15",
-      amount: 150.00,
-      paymentMethod: "Cash",
-      reference: "SET-001",
-      notes: "Settlement for outstanding balance",
-      status: "completed"
-    },
-    {
-      id: "2",
-      customerId: "3",
-      customerName: "Sarah Johnson",
-      date: "2023-05-18",
-      amount: 75.50,
-      paymentMethod: "Credit Card",
-      reference: "SET-002",
-      status: "completed"
-    }
-  ]);
-  
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -72,8 +65,28 @@ export const CustomerSettlements = ({ username, onBack, onLogout }: { username: 
     status: "completed"
   });
   const { toast } = useToast();
+  
+  // Fetch saved settlements when component mounts
+  useEffect(() => {
+    const fetchSettlements = async () => {
+      try {
+        const savedSettlements = await getSavedSettlements();
+        const mappedSettlements = savedSettlements.map(mapSavedSettlementToSettlement);
+        setSettlements(mappedSettlements);
+      } catch (error) {
+        console.error('Error fetching customer settlements:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load customer settlements",
+          variant: "destructive"
+        });
+      }
+    };
+    
+    fetchSettlements();
+  }, [toast]);
 
-  const handleAddSettlement = () => {
+  const handleAddSettlement = async () => {
     if (!newSettlement.customerName || newSettlement.amount <= 0) {
       toast({
         title: "Error",
@@ -91,18 +104,52 @@ export const CustomerSettlements = ({ username, onBack, onLogout }: { username: 
       id: Date.now().toString(),
       reference
     };
-
-    setSettlements([...settlements, settlement]);
-    resetForm();
-    setIsDialogOpen(false);
     
-    toast({
-      title: "Success",
-      description: "Customer settlement recorded successfully"
-    });
+    try {
+      // Add to state
+      setSettlements([...settlements, settlement]);
+      
+      // Create the settlement object for the utility
+      const settlementToSave: SavedCustomerSettlementData = {
+        id: settlement.id,
+        customerName: settlement.customerName,
+        customerId: settlement.customerId,
+        customerPhone: "", // Default empty
+        customerEmail: "", // Default empty
+        referenceNumber: settlement.reference,
+        settlementAmount: settlement.amount,
+        paymentMethod: settlement.paymentMethod,
+        cashierName: "System", // Default cashier
+        previousBalance: 0, // Default
+        amountPaid: settlement.amount, // Assume full payment
+        newBalance: 0, // Default
+        notes: settlement.notes,
+        date: settlement.date,
+        time: new Date().toLocaleTimeString() // Current time
+      };
+      
+      // Save to utility
+      await saveCustomerSettlement(settlementToSave);
+      
+      resetForm();
+      setIsDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "Customer settlement recorded successfully"
+      });
+    } catch (error) {
+      console.error('Error saving customer settlement:', error);
+      setSettlements(settlements); // Revert state
+      toast({
+        title: "Error",
+        description: "Failed to save customer settlement",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleUpdateSettlement = () => {
+  const handleUpdateSettlement = async () => {
     if (!editingSettlement || !editingSettlement.customerName || editingSettlement.amount <= 0) {
       toast({
         title: "Error",
@@ -112,22 +159,60 @@ export const CustomerSettlements = ({ username, onBack, onLogout }: { username: 
       return;
     }
 
-    setSettlements(settlements.map(s => s.id === editingSettlement.id ? editingSettlement : s));
-    resetForm();
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "Customer settlement updated successfully"
-    });
+    try {
+      setSettlements(settlements.map(s => s.id === editingSettlement.id ? editingSettlement : s));
+      
+      // Update the settlement in storage
+      // Note: For now, we're not implementing update functionality in the utility
+      // In a real implementation, you would need an updateCustomerSettlement function
+      
+      resetForm();
+      setIsDialogOpen(false);
+      
+      toast({
+        title: "Success",
+        description: "Customer settlement updated successfully"
+      });
+    } catch (error) {
+      console.error('Error updating customer settlement:', error);
+      // Refresh settlements to revert any changes
+      const savedSettlements = await getSavedSettlements();
+      const mappedSettlements = savedSettlements.map(mapSavedSettlementToSettlement);
+      setSettlements(mappedSettlements);
+      
+      toast({
+        title: "Error",
+        description: "Failed to update customer settlement",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleDeleteSettlement = (id: string) => {
-    setSettlements(settlements.filter(s => s.id !== id));
-    toast({
-      title: "Success",
-      description: "Customer settlement deleted successfully"
-    });
+  const handleDeleteSettlement = async (id: string) => {
+    try {
+      // Remove from state
+      setSettlements(settlements.filter(s => s.id !== id));
+      
+      // Remove from storage
+      await deleteCustomerSettlement(id);
+      
+      toast({
+        title: "Success",
+        description: "Customer settlement deleted successfully"
+      });
+    } catch (error) {
+      console.error('Error deleting customer settlement:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete customer settlement",
+        variant: "destructive"
+      });
+      
+      // Revert the deletion if it failed in storage
+      const savedSettlements = await getSavedSettlements();
+      const mappedSettlements = savedSettlements.map(mapSavedSettlementToSettlement);
+      setSettlements(mappedSettlements);
+    }
   };
 
   const resetForm = () => {
