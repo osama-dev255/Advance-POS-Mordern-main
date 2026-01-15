@@ -103,8 +103,9 @@ interface CustomerSettlementData {
   amountPaid: number;
   newBalance: number;
   notes: string;
-  date?: string;
-  time?: string;
+  date: string;
+  time: string;
+  status: "completed" | "pending" | "cancelled";
 }
 
 interface SavedDeliveryNote {
@@ -773,7 +774,10 @@ We appreciate your business.`,
     previousBalance: 0,
     amountPaid: 0,
     newBalance: 0,
-    notes: ""
+    notes: "",
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toLocaleTimeString(),
+    status: "completed"
   });
     
   const [purchaseOrderData, setPurchaseOrderData] = useState<PurchaseOrderData>({
@@ -3904,29 +3908,76 @@ We appreciate your business.`,
                         alert(`Report Template ${reportName} saved successfully!`);
                       } else if (currentTemplate?.type === "customer-settlement") {
                         try {
+                          // Validate required fields before saving
+                          if (!customerSettlementData.customerName || customerSettlementData.customerName.trim() === "" || customerSettlementData.customerName === "Customer Name") {
+                            alert("Please enter a valid customer name.");
+                            return;
+                          }
+                          
+                          if (!customerSettlementData.referenceNumber || customerSettlementData.referenceNumber.trim() === "" || customerSettlementData.referenceNumber === "SET-001") {
+                            alert("Please enter a valid reference number.");
+                            return;
+                          }
+                          
+                          if (customerSettlementData.settlementAmount <= 0) {
+                            alert("Please enter a valid settlement amount greater than 0.");
+                            return;
+                          }
+                          
                           // Prepare customer settlement data for saving
                           const settlementToSave: SavedCustomerSettlementData = {
                             id: Date.now().toString(), // Generate unique ID
-                            customerName: customerSettlementData.customerName,
-                            customerId: customerSettlementData.customerId,
-                            customerPhone: customerSettlementData.customerPhone,
-                            customerEmail: customerSettlementData.customerEmail,
-                            referenceNumber: customerSettlementData.referenceNumber,
+                            customerName: customerSettlementData.customerName.trim(),
+                            customerId: customerSettlementData.customerId || "",
+                            customerPhone: customerSettlementData.customerPhone || "",
+                            customerEmail: customerSettlementData.customerEmail || "",
+                            referenceNumber: customerSettlementData.referenceNumber.trim(),
                             settlementAmount: customerSettlementData.settlementAmount,
-                            paymentMethod: customerSettlementData.paymentMethod,
-                            cashierName: customerSettlementData.cashierName,
-                            previousBalance: customerSettlementData.previousBalance,
-                            amountPaid: customerSettlementData.amountPaid,
-                            newBalance: customerSettlementData.newBalance,
-                            notes: customerSettlementData.notes,
+                            paymentMethod: customerSettlementData.paymentMethod || "Cash",
+                            cashierName: customerSettlementData.cashierName || "System",
+                            previousBalance: customerSettlementData.previousBalance || 0,
+                            amountPaid: customerSettlementData.amountPaid || 0,
+                            newBalance: customerSettlementData.newBalance || 0,
+                            notes: customerSettlementData.notes || "",
                             date: new Date().toISOString().split('T')[0], // Current date
-                            time: new Date().toLocaleTimeString() // Current time
+                            time: new Date().toLocaleTimeString(), // Current time
+                            status: "completed" // Default status for saved settlements
                           };
+                          
+                          console.log("Saving customer settlement:", settlementToSave);
                           
                           await saveCustomerSettlement(settlementToSave);
                           
+                          // Reset form to default values
+                          setCustomerSettlementData({
+                            customerName: "Customer Name",
+                            customerId: "CUST-001",
+                            customerPhone: "(555) 123-4567",
+                            customerEmail: "customer@example.com",
+                            referenceNumber: "SET-001",
+                            settlementAmount: 0,
+                            paymentMethod: "Cash",
+                            cashierName: "Cashier Name",
+                            previousBalance: 0,
+                            amountPaid: 0,
+                            newBalance: 0,
+                            notes: "",
+                            date: new Date().toISOString().split('T')[0],
+                            time: new Date().toLocaleTimeString(),
+                            status: "completed"
+                          });
+                          
                           // Show the customer settlement options dialog after saving
                           showCustomerSettlementOptionsDialog();
+                          
+                          // Trigger a storage event to notify other components of the change
+                          window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'savedSettlements',
+                            newValue: JSON.stringify([settlementToSave])
+                          }));
+                          
+                          // Trigger manual refresh event
+                          window.dispatchEvent(new Event('refreshSettlements'));
                         } catch (error) {
                           console.error('Error saving customer settlement:', error);
                           alert('Error saving customer settlement. Please try again.');

@@ -18,10 +18,21 @@ export interface CustomerSettlementData {
   notes?: string;
   date: string;
   time: string;
+  status?: "completed" | "pending" | "cancelled";
 }
 
 export const saveCustomerSettlement = async (settlement: CustomerSettlementData): Promise<void> => {
   try {
+    // Validate required fields
+    if (!settlement.customerName || !settlement.referenceNumber) {
+      throw new Error("Customer name and reference number are required");
+    }
+    
+    // Ensure we have a proper ID
+    if (!settlement.id) {
+      settlement.id = Date.now().toString();
+    }
+    
     // First, save to localStorage for immediate availability
     const savedSettlements = await getSavedSettlements();
     const updatedSettlements = [...savedSettlements, settlement];
@@ -31,28 +42,54 @@ export const saveCustomerSettlement = async (settlement: CustomerSettlementData)
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { error } = await supabase
-        .from('saved_customer_settlements')
+        .from('customer_settlements')
         .insert({
           user_id: user.id,
-          customer_name: settlement.customerName,
-          customer_id: settlement.customerId,
-          customer_phone: settlement.customerPhone,
-          customer_email: settlement.customerEmail,
-          reference_number: settlement.referenceNumber,
-          settlement_amount: settlement.settlementAmount,
-          payment_method: settlement.paymentMethod,
-          cashier_name: settlement.cashierName,
-          previous_balance: settlement.previousBalance,
-          amount_paid: settlement.amountPaid,
-          new_balance: settlement.newBalance,
-          notes: settlement.notes,
-          date: settlement.date,
-          time: settlement.time
+          customer_name: settlement.customerName || '',
+          customer_id: settlement.customerId || '',
+          customer_phone: settlement.customerPhone || '',
+          customer_email: settlement.customerEmail || '',
+          reference_number: settlement.referenceNumber || '',
+          settlement_amount: settlement.settlementAmount || 0,
+          payment_method: settlement.paymentMethod || 'Cash',
+          cashier_name: settlement.cashierName || 'System',
+          previous_balance: settlement.previousBalance || 0,
+          amount_paid: settlement.amountPaid || 0,
+          new_balance: settlement.newBalance || 0,
+          notes: settlement.notes || '',
+          date: settlement.date || new Date().toISOString().split('T')[0],
+          time: settlement.time || new Date().toLocaleTimeString(),
+          status: settlement.status || 'completed'
         });
       
       if (error) {
         console.error('Error saving customer settlement to database:', error);
-        // Don't throw error - still have local storage backup
+      }
+    } else {
+      // If not authenticated, still try to save to database with null user_id
+      const { error } = await supabase
+        .from('customer_settlements')
+        .insert({
+          user_id: null,
+          customer_name: settlement.customerName || '',
+          customer_id: settlement.customerId || '',
+          customer_phone: settlement.customerPhone || '',
+          customer_email: settlement.customerEmail || '',
+          reference_number: settlement.referenceNumber || '',
+          settlement_amount: settlement.settlementAmount || 0,
+          payment_method: settlement.paymentMethod || 'Cash',
+          cashier_name: settlement.cashierName || 'System',
+          previous_balance: settlement.previousBalance || 0,
+          amount_paid: settlement.amountPaid || 0,
+          new_balance: settlement.newBalance || 0,
+          notes: settlement.notes || '',
+          date: settlement.date || new Date().toISOString().split('T')[0],
+          time: settlement.time || new Date().toLocaleTimeString(),
+          status: settlement.status || 'completed'
+        });
+      
+      if (error) {
+        console.error('Error saving customer settlement to database:', error);
       }
     }
   } catch (error) {
@@ -63,47 +100,113 @@ export const saveCustomerSettlement = async (settlement: CustomerSettlementData)
 
 export const getSavedSettlements = async (): Promise<CustomerSettlementData[]> => {
   try {
-    // First, try to get from database
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data, error } = await supabase
-        .from('saved_customer_settlements')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error retrieving saved settlements from database:', error);
-        // Fallback to localStorage
-        const saved = localStorage.getItem(SAVED_SETTLEMENTS_KEY);
-        return saved ? JSON.parse(saved) : [];
+    // Check localStorage first as primary source
+    const localStorageData = localStorage.getItem(SAVED_SETTLEMENTS_KEY);
+    let localStorageSettlements: any[] = [];
+    
+    if (localStorageData) {
+      try {
+        localStorageSettlements = JSON.parse(localStorageData);
+        
+        // Validate localStorage data
+        const validLocalSettlements = localStorageSettlements.filter(settlement => 
+          settlement && 
+          settlement.id &&
+          settlement.customerName && 
+          settlement.referenceNumber
+        );
+        
+        if (validLocalSettlements.length > 0) {
+          return validLocalSettlements;
+        }
+      } catch (parseError) {
+        console.error('Error parsing localStorage data:', parseError);
       }
-      
-      // Transform database records to CustomerSettlementData format
-      return data.map(dbSettlement => ({
-        id: dbSettlement.id,
-        customerName: dbSettlement.customer_name,
-        customerId: dbSettlement.customer_id,
-        customerPhone: dbSettlement.customer_phone,
-        customerEmail: dbSettlement.customer_email,
-        referenceNumber: dbSettlement.reference_number,
-        settlementAmount: dbSettlement.settlement_amount,
-        paymentMethod: dbSettlement.payment_method,
-        cashierName: dbSettlement.cashier_name,
-        previousBalance: dbSettlement.previous_balance,
-        amountPaid: dbSettlement.amount_paid,
-        newBalance: dbSettlement.new_balance,
-        notes: dbSettlement.notes,
-        date: dbSettlement.date,
-        time: dbSettlement.time
-      }));
-    } else {
-      // If not authenticated, use localStorage
-      const saved = localStorage.getItem(SAVED_SETTLEMENTS_KEY);
-      return saved ? JSON.parse(saved) : [];
     }
+    
+    // Try database as secondary source
+    const { data: { user } } = await supabase.auth.getUser();
+    let data, error;
+    
+    if (user) {
+      ({ data, error } = await supabase
+        .from('customer_settlements')
+        .select('*')
+        .or(`user_id.eq.${user.id},user_id.is.null`)
+        .order('created_at', { ascending: false }));
+    } else {
+      ({ data, error } = await supabase
+        .from('customer_settlements')
+        .select('*')
+        .is('user_id', null)
+        .order('created_at', { ascending: false }));
+    }
+    
+    if (error) {
+      // Return localStorage data even if database fails
+      return localStorageSettlements.filter(settlement => 
+        settlement && 
+        settlement.id &&
+        settlement.customerName && 
+        settlement.referenceNumber
+      );
+    }
+    
+    // Transform database records
+    const transformedData = data.map(dbSettlement => ({
+      id: dbSettlement.id,
+      customerName: dbSettlement.customer_name,
+      customerId: dbSettlement.customer_id,
+      customerPhone: dbSettlement.customer_phone,
+      customerEmail: dbSettlement.customer_email,
+      referenceNumber: dbSettlement.reference_number,
+      settlementAmount: dbSettlement.settlement_amount,
+      paymentMethod: dbSettlement.payment_method,
+      cashierName: dbSettlement.cashier_name,
+      previousBalance: dbSettlement.previous_balance,
+      amountPaid: dbSettlement.amount_paid,
+      newBalance: dbSettlement.new_balance,
+      notes: dbSettlement.notes,
+      date: dbSettlement.date,
+      time: dbSettlement.time,
+      status: dbSettlement.status
+    }));
+    
+    // Validate transformed data
+    const validDbSettlements = transformedData.filter(settlement => 
+      settlement && 
+      settlement.id &&
+      settlement.customerName && 
+      settlement.referenceNumber
+    );
+    
+    // Combine both sources and deduplicate
+    const allSettlements = [...localStorageSettlements, ...validDbSettlements];
+    const uniqueSettlements = allSettlements.filter((settlement, index, self) => 
+      index === self.findIndex(s => s.id === settlement.id)
+    );
+    
+    return uniqueSettlements;
+    
   } catch (error) {
     console.error('Error retrieving saved settlements:', error);
+    
+    // Emergency fallback to localStorage
+    try {
+      const saved = localStorage.getItem(SAVED_SETTLEMENTS_KEY);
+      if (saved) {
+        const parsedData = JSON.parse(saved);
+        return parsedData.filter((settlement: any) => 
+          settlement && 
+          settlement.id &&
+          settlement.customerName && 
+          settlement.referenceNumber
+        );
+      }
+    } catch (parseError) {
+      console.error('Emergency fallback failed:', parseError);
+    }
+    
     return [];
   }
 };
@@ -116,17 +219,22 @@ export const deleteCustomerSettlement = async (settlementId: string): Promise<vo
     
     // Also delete from database
     const { data: { user } } = await supabase.auth.getUser();
+    let deleteQuery = supabase
+      .from('customer_settlements')
+      .delete()
+      .eq('id', settlementId);
+    
     if (user) {
-      const { error } = await supabase
-        .from('saved_customer_settlements')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('id', settlementId);
-      
-      if (error) {
-        console.error('Error deleting customer settlement from database:', error);
-        // Don't throw error - still have local storage backup
-      }
+      deleteQuery = deleteQuery.eq('user_id', user.id);
+    } else {
+      deleteQuery = deleteQuery.is('user_id', null);
+    }
+    
+    const { error } = await deleteQuery;
+    
+    if (error) {
+      console.error('Error deleting customer settlement from database:', error);
+      // Don't throw error - still have local storage backup
     }
   } catch (error) {
     console.error('Error deleting customer settlement:', error);
@@ -144,32 +252,38 @@ export const updateCustomerSettlement = async (updatedSettlement: CustomerSettle
     
     // Also update in database
     const { data: { user } } = await supabase.auth.getUser();
+    let updateQuery = supabase
+      .from('customer_settlements')
+      .update({
+        customer_name: updatedSettlement.customerName || '',
+        customer_id: updatedSettlement.customerId || '',
+        customer_phone: updatedSettlement.customerPhone || '',
+        customer_email: updatedSettlement.customerEmail || '',
+        reference_number: updatedSettlement.referenceNumber || '',
+        settlement_amount: updatedSettlement.settlementAmount || 0,
+        payment_method: updatedSettlement.paymentMethod || 'Cash',
+        cashier_name: updatedSettlement.cashierName || 'System',
+        previous_balance: updatedSettlement.previousBalance || 0,
+        amount_paid: updatedSettlement.amountPaid || 0,
+        new_balance: updatedSettlement.newBalance || 0,
+        notes: updatedSettlement.notes || '',
+        date: updatedSettlement.date || new Date().toISOString().split('T')[0],
+        time: updatedSettlement.time || new Date().toLocaleTimeString(),
+        status: updatedSettlement.status || 'completed'
+      })
+      .eq('id', updatedSettlement.id);
+    
     if (user) {
-      const { error } = await supabase
-        .from('saved_customer_settlements')
-        .update({
-          customer_name: updatedSettlement.customerName,
-          customer_id: updatedSettlement.customerId,
-          customer_phone: updatedSettlement.customerPhone,
-          customer_email: updatedSettlement.customerEmail,
-          reference_number: updatedSettlement.referenceNumber,
-          settlement_amount: updatedSettlement.settlementAmount,
-          payment_method: updatedSettlement.paymentMethod,
-          cashier_name: updatedSettlement.cashierName,
-          previous_balance: updatedSettlement.previousBalance,
-          amount_paid: updatedSettlement.amountPaid,
-          new_balance: updatedSettlement.newBalance,
-          notes: updatedSettlement.notes,
-          date: updatedSettlement.date,
-          time: updatedSettlement.time
-        })
-        .eq('user_id', user.id)
-        .eq('id', updatedSettlement.id);
-      
-      if (error) {
-        console.error('Error updating customer settlement in database:', error);
-        // Don't throw error - still have local storage backup
-      }
+      updateQuery = updateQuery.eq('user_id', user.id);
+    } else {
+      updateQuery = updateQuery.is('user_id', null);
+    }
+    
+    const { error } = await updateQuery;
+    
+    if (error) {
+      console.error('Error updating customer settlement in database:', error);
+      // Don't throw error - still have local storage backup
     }
   } catch (error) {
     console.error('Error updating customer settlement:', error);

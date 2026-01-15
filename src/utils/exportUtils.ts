@@ -263,6 +263,136 @@ export class ExportUtils {
     }
   }
 
+  // Export customer settlement as PDF using jsPDF
+  static exportCustomerSettlementAsPDF(settlement: any, filename: string) {
+    if (!settlement) return;
+
+    // Create a new jsPDF instance (receipt size)
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: [80, 200] // 80mm width (standard receipt width) x 200mm height
+    });
+
+    // Set font and size for receipt
+    doc.setFontSize(12);
+    
+    // Add business header
+    doc.setFont(undefined, 'bold');
+    doc.text('POS BUSINESS', doc.internal.pageSize.width / 2, 10, { align: 'center' });
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(8);
+    doc.text('123 Business St, City, Country', doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    doc.text('Phone: (123) 456-7890', doc.internal.pageSize.width / 2, 19, { align: 'center' });
+    
+    // Add separator line
+    doc.line(5, 22, doc.internal.pageSize.width - 5, 22);
+    
+    // Add settlement info
+    doc.setFontSize(8);
+    const settlementNumber = settlement.referenceNumber || settlement.id;
+    const date = new Date(settlement.date).toLocaleDateString();
+    const time = settlement.time || new Date().toLocaleTimeString();
+    
+    doc.text(`Settlement #: ${settlementNumber}`, 5, 27);
+    doc.text(`Date: ${date}`, 5, 31);
+    doc.text(`Time: ${time}`, 5, 35);
+    
+    // Add separator line
+    doc.line(5, 38, doc.internal.pageSize.width - 5, 38);
+    
+    // Add customer info
+    let currentY = 40;
+    doc.setFont(undefined, 'bold');
+    doc.text('Customer:', 5, currentY);
+    doc.setFont(undefined, 'normal');
+    currentY += 4;
+    doc.text(settlement.customerName, 5, currentY);
+    currentY += 4;
+    
+    if (settlement.customerPhone) {
+      doc.text(`Phone: ${settlement.customerPhone}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    if (settlement.customerEmail) {
+      doc.text(`Email: ${settlement.customerEmail}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    // Add separator line
+    doc.line(5, currentY, doc.internal.pageSize.width - 5, currentY);
+    currentY += 3;
+    
+    // Add settlement details
+    doc.setFont(undefined, 'bold');
+    doc.text('Settlement Details:', 5, currentY);
+    doc.setFont(undefined, 'normal');
+    currentY += 4;
+    
+    doc.text(`Payment Method: ${settlement.paymentMethod}`, 5, currentY);
+    currentY += 4;
+    
+    if (settlement.previousBalance !== undefined) {
+      doc.text(`Previous Balance: ${settlement.previousBalance.toFixed(2)}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    doc.text(`Amount Paid: ${settlement.amountPaid.toFixed(2)}`, 5, currentY);
+    currentY += 4;
+    
+    if (settlement.newBalance !== undefined) {
+      doc.text(`New Balance: ${settlement.newBalance.toFixed(2)}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    if (settlement.notes) {
+      doc.text(`Notes: ${settlement.notes}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    // Add separator line
+    doc.line(5, currentY, doc.internal.pageSize.width - 5, currentY);
+    currentY += 3;
+    
+    // Add totals
+    doc.setFont(undefined, 'bold');
+    doc.text('Settlement Summary:', 5, currentY);
+    doc.setFont(undefined, 'normal');
+    currentY += 4;
+    
+    doc.text(`Total Settlement: ${settlement.settlementAmount.toFixed(2)}`, 5, currentY);
+    currentY += 4;
+    
+    doc.text(`Status: ${settlement.status || 'completed'}`, 5, currentY);
+    currentY += 4;
+    
+    doc.text(`Processed By: ${settlement.cashierName || 'System'}`, 5, currentY);
+    currentY += 6;
+    
+    // Add separator line
+    doc.line(5, currentY, doc.internal.pageSize.width - 5, currentY);
+    currentY += 5;
+    
+    // Add footer
+    doc.setFontSize(8);
+    doc.text('Thank you for your business!', doc.internal.pageSize.width / 2, currentY, { align: 'center' });
+    currentY += 4;
+    doc.text('Settlements are recorded in our system', doc.internal.pageSize.width / 2, currentY, { align: 'center' });
+    
+    // Check if we're on a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // For mobile devices, save the PDF and show notification
+      doc.save(`${filename}.pdf`);
+      this.showPreviewNotification("Settlement PDF saved to your device. Check your downloads folder.");
+    } else {
+      // For desktop, save the PDF
+      doc.save(`${filename}.pdf`);
+    }
+  }
+
   // Show preview notification for mobile users
   static showPreviewNotification(message: string) {
     // Remove any existing notification

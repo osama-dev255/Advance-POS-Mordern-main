@@ -111,7 +111,8 @@ export const hasModuleAccess = (role: string | null, module: string): boolean =>
       'purchase-assets', 'sell-assets', 'dispose-assets', 'adjust-assets',
       'templates',
       'saved-invoices',
-      'saved-deliveries'
+      'saved-deliveries',
+      'saved-customer-settlements'
     ],
     'manager': [
       'sales', 'inventory', 'customers', 'suppliers', 'purchase', 'finance', 
@@ -127,19 +128,22 @@ export const hasModuleAccess = (role: string | null, module: string): boolean =>
       'purchase-assets', 'sell-assets', 'dispose-assets', 'adjust-assets',
       'templates',
       'saved-invoices',
-      'saved-deliveries'
+      'saved-deliveries',
+      'saved-customer-settlements'
     ],
     'cashier': [
       'sales', 'customers', 'products', 'transactions', 'discounts', 'scanner',
       'sales-cart', 'sales-orders', 'test-data', 'capital',
       'assets', 'templates',
       'saved-invoices',
-      'saved-deliveries'
+      'saved-deliveries',
+      'saved-customer-settlements'
     ],
     'staff': [
       'inventory', 'customers', 'products', 'capital',
       'assets', 'templates',
-      'saved-deliveries'
+      'saved-deliveries',
+      'saved-customer-settlements'
     ]
   };
   

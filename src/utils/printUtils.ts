@@ -743,6 +743,335 @@ export class PrintUtils {
     }, 5000);
   }
 
+  // Print customer settlement receipt
+  static async printCustomerSettlement(settlement: any) {
+    // Show loading indicator
+    this.showLoadingIndicator('Preparing customer settlement...');
+    
+    // For mobile devices, use the mobile print approach
+    if (this.isMobileDevice()) {
+      return this.printCustomerSettlementMobile(settlement);
+    }
+
+    // For desktop, use a hidden iframe approach to avoid window stacking
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'absolute';
+    printFrame.style.top = '-1000px';
+    printFrame.style.left = '-1000px';
+    document.body.appendChild(printFrame);
+    
+    const printDocument = printFrame.contentDocument || printFrame.contentWindow?.document;
+    if (!printDocument) {
+      this.hideLoadingIndicator();
+      console.error('Could not access print frame document');
+      return;
+    }
+    
+    // Format the settlement receipt content
+    const settlementContent = `<!DOCTYPE html>
+<html>
+  <head>
+    <title>Customer Settlement</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      @media print {
+        @page {
+          margin: 0.5in;
+          size: auto;
+        }
+        body {
+          margin: 0.5in;
+          padding: 0;
+        }
+      }
+      body {
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        max-width: 320px;
+        margin: 0 auto;
+        padding: 10px;
+      }
+      .header {
+        text-align: center;
+        border-bottom: 1px dashed #000;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+      }
+      .business-name {
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .business-info {
+        font-size: 10px;
+        margin-bottom: 5px;
+      }
+      .receipt-info {
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        margin-bottom: 10px;
+      }
+      .customer-info {
+        border: 1px solid #ccc;
+        padding: 8px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+      }
+      .customer-name {
+        font-weight: bold;
+        margin-bottom: 3px;
+      }
+      .customer-detail {
+        font-size: 10px;
+        margin-bottom: 2px;
+      }
+      .settlement-details {
+        margin-bottom: 10px;
+      }
+      .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3px;
+      }
+      .detail-label {
+        font-weight: bold;
+      }
+      .totals {
+        border-top: 1px dashed #000;
+        padding-top: 10px;
+        margin-top: 10px;
+      }
+      .total-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+      .final-total {
+        font-weight: bold;
+        font-size: 14px;
+        margin: 10px 0;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 10px;
+      }
+      .thank-you {
+        font-weight: bold;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="business-name">POS BUSINESS</div>
+      <div class="business-info">123 Business St, City, Country</div>
+      <div class="business-info">Phone: (123) 456-7890</div>
+    </div>
+    
+    <div class="receipt-info">
+      <div>Settlement #: ${settlement.referenceNumber || settlement.id}</div>
+      <div>${new Date(settlement.date).toLocaleDateString()}</div>
+      <div>${settlement.time || new Date().toLocaleTimeString()}</div>
+    </div>
+    
+    <div class="customer-info">
+      <div class="customer-name">${settlement.customerName}</div>
+      ${settlement.customerPhone ? `<div class="customer-detail">Phone: ${settlement.customerPhone}</div>` : ''}
+      ${settlement.customerEmail ? `<div class="customer-detail">Email: ${settlement.customerEmail}</div>` : ''}
+    </div>
+    
+    <div class="settlement-details">
+      <div class="detail-row">
+        <div class="detail-label">Payment Method:</div>
+        <div>${settlement.paymentMethod}</div>
+      </div>
+      ${settlement.previousBalance !== undefined ? `
+      <div class="detail-row">
+        <div class="detail-label">Previous Balance:</div>
+        <div>${settlement.previousBalance.toFixed(2)}</div>
+      </div>` : ''}
+      <div class="detail-row">
+        <div class="detail-label">Amount Paid:</div>
+        <div>${settlement.amountPaid.toFixed(2)}</div>
+      </div>
+      ${settlement.newBalance !== undefined ? `
+      <div class="detail-row">
+        <div class="detail-label">New Balance:</div>
+        <div>${settlement.newBalance.toFixed(2)}</div>
+      </div>` : ''}
+      ${settlement.notes ? `
+      <div class="detail-row">
+        <div class="detail-label">Notes:</div>
+        <div>${settlement.notes}</div>
+      </div>` : ''}
+    </div>
+    
+    <div class="totals">
+      <div class="total-row">
+        <div class="detail-label">Total Settlement:</div>
+        <div>${settlement.settlementAmount.toFixed(2)}</div>
+      </div>
+      <div class="total-row">
+        <div class="detail-label">Status:</div>
+        <div>${settlement.status || 'completed'}</div>
+      </div>
+      <div class="total-row">
+        <div class="detail-label">Processed By:</div>
+        <div>${settlement.cashierName || 'System'}</div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <div class="thank-you">Thank you for your business!</div>
+      <div>For more info, visit us at www.posbusiness.com</div>
+    </div>
+  </body>
+</html>`;
+    
+    // Write content to iframe and print
+    printDocument.open();
+    printDocument.write(settlementContent);
+    printDocument.close();
+    
+    // Wait for content to load before printing
+    printFrame.onload = () => {
+      try {
+        printFrame.contentWindow?.focus();
+        printFrame.contentWindow?.print();
+      } catch (error) {
+        console.error('Error during printing:', error);
+      } finally {
+        // Clean up - remove iframe after a short delay to ensure printing started
+        setTimeout(() => {
+          if (printFrame.parentNode) {
+            printFrame.parentNode.removeChild(printFrame);
+          }
+          this.hideLoadingIndicator();
+        }, 1000);
+      }
+    };
+    
+    // Fallback cleanup in case onload doesn't fire
+    setTimeout(() => {
+      if (printFrame.parentNode) {
+        printFrame.parentNode.removeChild(printFrame);
+      }
+      this.hideLoadingIndicator();
+    }, 5000);
+  }
+
+  // Mobile print customer settlement
+  static printCustomerSettlementMobile(settlement: any) {
+    console.log('Using mobile print approach for customer settlement...');
+    
+    // Create a modal dialog for mobile printing with a clear print button
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed';
+    modal.style.top = '0';
+    modal.style.left = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    modal.style.zIndex = '10000';
+    modal.style.display = 'flex';
+    modal.style.justifyContent = 'center';
+    modal.style.alignItems = 'center';
+    
+    // Format the settlement receipt content
+    const settlementContent = `
+      <div style="background: white; padding: 20px; max-width: 90%; max-height: 80%; overflow-y: auto;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Customer Settlement Preview</h2>
+        <div style="font-family: monospace; font-size: 14px;">
+          <div style="text-align: center; border-bottom: 1px dashed #000; padding-bottom: 10px; margin-bottom: 10px;">
+            <div style="font-weight: bold; font-size: 18px;">POS BUSINESS</div>
+            <div style="font-size: 12px;">123 Business St, City, Country</div>
+            <div style="font-size: 12px;">Phone: (123) 456-7890</div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px;">
+            <div>Settlement #: ${settlement.referenceNumber || settlement.id}</div>
+            <div>${new Date(settlement.date).toLocaleDateString()}</div>
+          </div>
+          
+          <div style="padding: 8px; margin-bottom: 10px; background-color: #f9f9f9;">
+            <div style="font-weight: bold; margin-bottom: 3px;">${settlement.customerName}</div>
+            ${settlement.customerPhone ? `<div style="font-size: 10px; margin-bottom: 2px;">Phone: ${settlement.customerPhone}</div>` : ''}
+            ${settlement.customerEmail ? `<div style="font-size: 10px; margin-bottom: 2px;">Email: ${settlement.customerEmail}</div>` : ''}
+          </div>
+          
+          <div style="margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <div style="font-weight: bold;">Payment Method:</div>
+              <div>${settlement.paymentMethod}</div>
+            </div>
+            ${settlement.previousBalance !== undefined ? `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <div style="font-weight: bold;">Previous Balance:</div>
+              <div>${settlement.previousBalance.toFixed(2)}</div>
+            </div>` : ''}
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <div style="font-weight: bold;">Amount Paid:</div>
+              <div>${settlement.amountPaid.toFixed(2)}</div>
+            </div>
+            ${settlement.newBalance !== undefined ? `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <div style="font-weight: bold;">New Balance:</div>
+              <div>${settlement.newBalance.toFixed(2)}</div>
+            </div>` : ''}
+            ${settlement.notes ? `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+              <div style="font-weight: bold;">Notes:</div>
+              <div>${settlement.notes}</div>
+            </div>` : ''}
+          </div>
+          
+          <div style="border-top: 1px dashed #000; padding-top: 10px; margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <div style="font-weight: bold;">Total Settlement:</div>
+              <div>${settlement.settlementAmount.toFixed(2)}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <div style="font-weight: bold;">Status:</div>
+              <div>${settlement.status || 'completed'}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <div style="font-weight: bold;">Processed By:</div>
+              <div>${settlement.cashierName || 'System'}</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+          <button id="cancelPrint" style="flex: 1; padding: 12px; background: #ccc; border: none; border-radius: 5px; font-size: 16px;">Cancel</button>
+          <button id="confirmPrint" style="flex: 1; padding: 12px; background: #4CAF50; color: white; border: none; border-radius: 5px; font-size: 16px;">Print Settlement</button>
+        </div>
+      </div>
+    `;
+    
+    modal.innerHTML = settlementContent;
+    document.body.appendChild(modal);
+    
+    // Add event listeners
+    const confirmBtn = modal.querySelector('#confirmPrint');
+    const cancelBtn = modal.querySelector('#cancelPrint');
+    
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => {
+        // Use the standard print method for mobile
+        this.printCustomerSettlement(settlement);
+        document.body.removeChild(modal);
+      });
+    }
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+      });
+    }
+  }
+
   // Show loading indicator
   static showLoadingIndicator(message: string) {
     const loadingIndicator = document.createElement('div');

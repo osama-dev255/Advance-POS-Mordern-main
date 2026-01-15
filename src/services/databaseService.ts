@@ -297,13 +297,22 @@ export interface CustomerSettlement {
   id?: string;
   customer_id?: string;
   user_id?: string;
-  amount: number;
-  payment_method: string;
+  customer_name: string;
+  customer_phone?: string;
+  customer_email?: string;
   reference_number?: string;
+  settlement_amount: number;
+  payment_method: string;
+  cashier_name?: string;
+  previous_balance?: number;
+  amount_paid?: number;
+  new_balance?: number;
   notes?: string;
-  settlement_date?: string;
+  date: string;
+  time?: string;
+  status?: string;
   created_at?: string;
-
+  updated_at?: string;
 }
 
 export interface SupplierSettlement {

@@ -39,7 +39,7 @@ const mapSavedSettlementToSettlement = (saved: SavedCustomerSettlementData): Set
     paymentMethod: saved.paymentMethod,
     reference: saved.referenceNumber,
     notes: saved.notes,
-    status: "completed", // Default to completed for saved settlements
+    status: saved.status || "completed", // Use status from saved data
     previousBalance: saved.previousBalance,
     newBalance: saved.newBalance,
     processedBy: saved.cashierName
@@ -128,13 +128,14 @@ export const CustomerSettlements = ({ username, onBack, onLogout }: { username: 
         referenceNumber: settlement.reference,
         settlementAmount: settlement.amount,
         paymentMethod: settlement.paymentMethod,
-        cashierName: "System", // Default cashier
-        previousBalance: 0, // Default
+        cashierName: settlement.processedBy || "System", // Use processedBy field
+        previousBalance: settlement.previousBalance || 0, // Use previous balance if provided
         amountPaid: settlement.amount, // Assume full payment
-        newBalance: 0, // Default
+        newBalance: settlement.newBalance || 0, // Use new balance if provided
         notes: settlement.notes,
         date: settlement.date,
-        time: new Date().toLocaleTimeString() // Current time
+        time: new Date().toLocaleTimeString(), // Current time
+        status: settlement.status || "completed" // Add status field
       };
       
       // Save to utility
@@ -181,13 +182,14 @@ export const CustomerSettlements = ({ username, onBack, onLogout }: { username: 
         referenceNumber: editingSettlement.reference,
         settlementAmount: editingSettlement.amount,
         paymentMethod: editingSettlement.paymentMethod,
-        cashierName: "System", // Default cashier
-        previousBalance: 0, // Default
+        cashierName: editingSettlement.processedBy || "System", // Use processedBy field
+        previousBalance: editingSettlement.previousBalance || 0, // Use previous balance if provided
         amountPaid: editingSettlement.amount, // Assume full payment
-        newBalance: 0, // Default
+        newBalance: editingSettlement.newBalance || 0, // Use new balance if provided
         notes: editingSettlement.notes,
         date: editingSettlement.date,
-        time: new Date().toLocaleTimeString() // Current time
+        time: new Date().toLocaleTimeString(), // Current time
+        status: editingSettlement.status || "completed" // Add status field
       };
       
       await updateCustomerSettlement(settlementToUpdate);

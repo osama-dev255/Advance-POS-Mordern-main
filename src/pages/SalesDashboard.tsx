@@ -115,6 +115,13 @@ export const SalesDashboard = ({ username, onBack, onLogout, onNavigate }: Sales
       color: "bg-white border border-gray-200"
     },
     {
+      id: "saved-customer-settlements",
+      title: "Saved Customer Settlements",
+      description: "View and manage your saved customer settlements from templates",
+      icon: Wallet,
+      color: "bg-white border border-gray-200"
+    },
+    {
       id: "settings",
       title: "Sales Settings",
       description: "Configure sales system preferences and options",
@@ -170,6 +177,9 @@ export const SalesDashboard = ({ username, onBack, onLogout, onNavigate }: Sales
     } else if (module === "saved-deliveries") {
       // Navigate to the saved deliveries page
       navigate('/sales/saved-deliveries');
+    } else if (module === "saved-customer-settlements") {
+      // Navigate to the saved customer settlements page
+      navigate('/sales/saved-customer-settlements');
     } else {
       onNavigate(module);
     }
