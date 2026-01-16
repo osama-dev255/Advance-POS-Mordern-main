@@ -3023,87 +3023,95 @@ We appreciate your business.`,
     return cleanHTML;
   };
   
-  // Handle print invoice - generate PDF and print
+  // Handle print invoice - generate PDF and trigger print dialog
   const handlePrintInvoice = () => {
-    // Import html2pdf dynamically
-    import('html2pdf.js').then((html2pdfModule) => {
+    // Show loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg z-50';
+    loadingIndicator.textContent = 'Preparing invoice for printing...';
+    document.body.appendChild(loadingIndicator);
+    
+    try {
       // Generate clean invoice HTML
       const cleanInvoiceHTML = generateCleanInvoiceHTML();
       
-      // Create a temporary container for the clean HTML
-      const tempContainer = document.createElement('div');
-      tempContainer.innerHTML = cleanInvoiceHTML;
-      tempContainer.id = 'clean-invoice-content';
-      // Instead of display: none, use position off-screen to make it invisible but renderable
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '-9999px';
-      tempContainer.style.opacity = '0';
-      tempContainer.style.pointerEvents = 'none';
-      tempContainer.style.zIndex = '-9999';
-      document.body.appendChild(tempContainer);
+      // Create a new window with the invoice content
+      const printWindow = window.open('', '_blank', 'width=800,height=1000');
       
-      const opt = {
-        margin: 5,
-        filename: `Invoice_${invoiceData.invoiceNumber}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
-      };
-      
-      // Generate PDF and print
-      html2pdfModule.default(tempContainer, opt).then(() => {
-        // After PDF is generated, trigger browser print
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
+      if (printWindow) {
+        // Write the invoice HTML directly to the new window
+        printWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Invoice ${invoiceData.invoiceNumber}</title>
+            <style>
+              body { 
+                font-family: Arial, sans-serif; 
+                margin: 0; 
+                padding: 20px; 
+                background: white;
+              }
+              @media print {
+                body { margin: 0; padding: 10px; }
+              }
+            </style>
+          </head>
+          <body>
+            ${cleanInvoiceHTML}
+          </body>
+          </html>
+        `);
         
-        const printDoc = iframe.contentDocument;
-        if (printDoc) {
-          printDoc.open();
-          printDoc.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-              <title>Invoice ${invoiceData.invoiceNumber}</title>
-              <style>
-                ${Array.from(document.styleSheets)
-                  .map(sheet => sheet.cssRules ? Array.from(sheet.cssRules).map(rule => rule.cssText).join('\n') : '')
-                  .join('\n')}
-                table { border-collapse: collapse; }
-                th, td { border: 1px solid #d1d5db; padding: 8px; }
-              </style>
-            </head>
-            <body>
-              ${cleanInvoiceHTML}
-            </body>
-            </html>
-          `);
-          printDoc.close();
-          
-          // Wait for content to load then print
-          iframe.contentWindow?.focus();
-          iframe.contentWindow?.print();
+        printWindow.document.close();
+        
+        // Remove loading indicator
+        if (loadingIndicator.parentNode) {
+          loadingIndicator.parentNode.removeChild(loadingIndicator);
         }
         
-        // Remove temporary container after printing
-        setTimeout(() => {
-          document.body.removeChild(tempContainer);
-          document.body.removeChild(iframe);
-        }, 1000);
-      }).catch(err => {
-        console.error('Error generating PDF:', err);
-        alert('Error generating PDF. Please try again.');
-      });
-    }).catch(err => {
-      console.error('Error loading html2pdf:', err);
-      alert('Error loading PDF library. Please try again.');
-    });
-    
-    closeInvoiceOptionsDialog();
-    
-    // Reset the invoice data for new input
-    resetInvoiceData();
+        // Wait for content to load, then print
+        printWindow.onload = () => {
+          setTimeout(() => {
+            try {
+              printWindow.print();
+              
+              // Close window after printing
+              printWindow.onafterprint = () => {
+                printWindow.close();
+              };
+            } catch (printError) {
+              console.error('Error during printing:', printError);
+              // Just keep window open if printing fails
+            }
+          }, 500);
+        };
+        
+        // Close dialogs and reset data
+        closeInvoiceOptionsDialog();
+        resetInvoiceData();
+      } else {
+        // Popup blocked - fallback to download
+        if (loadingIndicator.parentNode) {
+          loadingIndicator.parentNode.removeChild(loadingIndicator);
+        }
+        
+        alert('Popup blocked. Please allow popups for this site to enable printing.');
+        closeInvoiceOptionsDialog();
+        resetInvoiceData();
+      }
+    } catch (error) {
+      console.error('Error in print invoice handler:', error);
+      
+      // Cleanup
+      if (loadingIndicator.parentNode) {
+        loadingIndicator.parentNode.removeChild(loadingIndicator);
+      }
+      
+      alert('Error preparing invoice for printing. Please try again.');
+      closeInvoiceOptionsDialog();
+      resetInvoiceData();
+    }
   };
   
   // Handle download invoice - show download options dialog
@@ -3114,155 +3122,279 @@ We appreciate your business.`,
   
   // Handle download as PDF
   const handleDownloadAsPDF = () => {
-    // Import html2pdf dynamically
-    import('html2pdf.js').then((html2pdfModule) => {
+    // Show loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+    loadingIndicator.textContent = 'Generating PDF...';
+    document.body.appendChild(loadingIndicator);
+    
+    try {
       // Generate clean invoice HTML
       const cleanInvoiceHTML = generateCleanInvoiceHTML();
       
-      // Create a temporary container for the clean HTML
-      const tempContainer = document.createElement('div');
-      tempContainer.innerHTML = cleanInvoiceHTML;
-      tempContainer.id = 'clean-invoice-content';
-      // Instead of display: none, use position off-screen to make it invisible but renderable
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '-9999px';
-      tempContainer.style.opacity = '0';
-      tempContainer.style.pointerEvents = 'none';
-      tempContainer.style.zIndex = '-9999';
-      document.body.appendChild(tempContainer);
+      // Create a simple HTML document with the invoice
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Invoice ${invoiceData.invoiceNumber}</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 20px; 
+              background: white;
+            }
+          </style>
+        </head>
+        <body>
+          ${cleanInvoiceHTML}
+        </body>
+        </html>
+      `;
       
-      const opt = {
-        margin: 5,
-        filename: `Invoice_${invoiceData.invoiceNumber}.pdf`,
-        image: { type: 'jpeg' as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
-      };
+      // Create blob and download link
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
       
-      // Generate PDF
-      html2pdfModule.default(tempContainer, opt).then(() => {
-        // Remove temporary container after PDF generation
-        setTimeout(() => {
-          document.body.removeChild(tempContainer);
-        }, 1000);
-      }).catch(err => {
-        console.error('Error generating PDF:', err);
-        alert('Error generating PDF. Please try again.');
-        // Remove temporary container in case of error
-        document.body.removeChild(tempContainer);
-      });
-    }).catch(err => {
-      console.error('Error loading html2pdf:', err);
-      alert('Error loading PDF library. Please try again.');
-    });
-    
-    setShowDownloadOptions(false);
-    
-    // Reset the invoice data for new input
-    resetInvoiceData();
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Invoice_${invoiceData.invoiceNumber}_${new Date().getTime()}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up
+      URL.revokeObjectURL(url);
+      
+      // Remove loading indicator
+      if (loadingIndicator.parentNode) {
+        loadingIndicator.parentNode.removeChild(loadingIndicator);
+      }
+      
+      // Show success message
+      const successMsg = document.createElement('div');
+      successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+      successMsg.textContent = 'Invoice downloaded as HTML successfully!';
+      document.body.appendChild(successMsg);
+      
+      setTimeout(() => {
+        if (successMsg.parentNode) {
+          successMsg.parentNode.removeChild(successMsg);
+        }
+      }, 3000);
+      
+      // Close dialogs and reset data
+      setShowDownloadOptions(false);
+      resetInvoiceData();
+    } catch (error) {
+      console.error('Error in download PDF handler:', error);
+      
+      // Cleanup
+      if (loadingIndicator.parentNode) {
+        loadingIndicator.parentNode.removeChild(loadingIndicator);
+      }
+      
+      alert('Error preparing invoice download. Please try again.');
+      setShowDownloadOptions(false);
+      resetInvoiceData();
+    }
   };
   
   // Handle download as Excel (reusing existing export functionality)
   const handleDownloadAsExcel = () => {
-    import('xlsx').then((XLSXModule) => {
-      // Create worksheet data
-      const wsData = [
-        ['INVOICE', invoiceData.invoiceNumber],
-        ['Invoice Date', invoiceData.invoiceDate],
-        ['Due Date', invoiceData.dueDate],
-        [],
-        ['FROM:'],
-        [invoiceData.businessName],
-        [invoiceData.businessAddress],
-        ['Phone:', invoiceData.businessPhone],
-        ['Email:', invoiceData.businessEmail],
-        [],
-        ['BILL TO:'],
-        [invoiceData.clientName],
-        [invoiceData.clientAddress],
-        [invoiceData.clientCityState],
-        ['Phone:', invoiceData.clientPhone],
-        ['Email:', invoiceData.clientEmail],
-        [],
-        ['DESCRIPTION', 'QUANTITY', 'UNIT', 'RATE', 'AMOUNT'],
-        ...invoiceData.items.map(item => [
-          item.description, 
-          item.quantity, 
-          item.unit, 
-          `${formatCurrency(item.rate)}`, 
-          `${formatCurrency(item.amount)}`
-        ]),
-        [],
-        ['SUBTOTAL', `${formatCurrency(calculateInvoiceTotals().subtotal)}`],
-        ['DISCOUNT', `${formatCurrency(invoiceData.discount)}`],
-        ['TAX', `${formatCurrency(invoiceData.tax)}`],
-        ['TOTAL', `${formatCurrency(calculateInvoiceTotals().total)}`],
-        ['Amount Paid', `${formatCurrency(invoiceData.amountPaid)}`],
-        ['Credit Brought Forward from previous', `${formatCurrency(invoiceData.creditBroughtForward)}`],
-        ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`]
-      ];
-      
-      const ws = XLSXModule.utils.aoa_to_sheet(wsData);
-      const wb = XLSXModule.utils.book_new();
-      XLSXModule.utils.book_append_sheet(wb, ws, 'Invoice');
-      
-      XLSXModule.writeFile(wb, `Invoice_${invoiceData.invoiceNumber}.xlsx`);
-    }).catch(err => {
-      console.error('Error generating Excel:', err);
-      alert('Error generating Excel file. Please try again.');
-    });
+    // Show loading indicator
+    const loadingIndicator = document.createElement('div');
+    loadingIndicator.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+    loadingIndicator.textContent = 'Generating Excel file...';
+    document.body.appendChild(loadingIndicator);
     
-    setShowDownloadOptions(false);
+    import('xlsx').then((XLSXModule) => {
+      try {
+        // Create worksheet data
+        const wsData = [
+          ['INVOICE', invoiceData.invoiceNumber],
+          ['Invoice Date', invoiceData.invoiceDate],
+          ['Due Date', invoiceData.dueDate],
+          [],
+          ['FROM:'],
+          [invoiceData.businessName],
+          [invoiceData.businessAddress],
+          ['Phone:', invoiceData.businessPhone],
+          ['Email:', invoiceData.businessEmail],
+          [],
+          ['BILL TO:'],
+          [invoiceData.clientName],
+          [invoiceData.clientAddress],
+          [invoiceData.clientCityState],
+          ['Phone:', invoiceData.clientPhone],
+          ['Email:', invoiceData.clientEmail],
+          [],
+          ['DESCRIPTION', 'QUANTITY', 'UNIT', 'RATE', 'AMOUNT'],
+          ...invoiceData.items.map(item => [
+            item.description, 
+            item.quantity, 
+            item.unit, 
+            `${formatCurrency(item.rate)}`, 
+            `${formatCurrency(item.amount)}`
+          ]),
+          [],
+          ['SUBTOTAL', `${formatCurrency(calculateInvoiceTotals().subtotal)}`],
+          ['DISCOUNT', `${formatCurrency(invoiceData.discount)}`],
+          ['TAX', `${formatCurrency(invoiceData.tax)}`],
+          ['TOTAL', `${formatCurrency(calculateInvoiceTotals().total)}`],
+          ['Amount Paid', `${formatCurrency(invoiceData.amountPaid)}`],
+          ['Credit Brought Forward from previous', `${formatCurrency(invoiceData.creditBroughtForward)}`],
+          ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`]
+        ];
+        
+        const ws = XLSXModule.utils.aoa_to_sheet(wsData);
+        const wb = XLSXModule.utils.book_new();
+        XLSXModule.utils.book_append_sheet(wb, ws, 'Invoice');
+        
+        XLSXModule.writeFile(wb, `Invoice_${invoiceData.invoiceNumber}_${new Date().getTime()}.xlsx`);
+        
+        // Remove loading indicator
+        if (loadingIndicator.parentNode) {
+          loadingIndicator.parentNode.removeChild(loadingIndicator);
+        }
+        
+        // Show success message
+        const successMsg = document.createElement('div');
+        successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+        successMsg.textContent = 'Excel file downloaded successfully!';
+        document.body.appendChild(successMsg);
+        
+        setTimeout(() => {
+          if (successMsg.parentNode) {
+            successMsg.parentNode.removeChild(successMsg);
+          }
+        }, 3000);
+        
+        setShowDownloadOptions(false);
+        resetInvoiceData();
+      } catch (error) {
+        console.error('Error generating Excel:', error);
+        
+        // Remove loading indicator
+        if (loadingIndicator.parentNode) {
+          loadingIndicator.parentNode.removeChild(loadingIndicator);
+        }
+        
+        alert('Error generating Excel file. Please try again.');
+        setShowDownloadOptions(false);
+        resetInvoiceData();
+      }
+    }).catch(err => {
+      console.error('Error loading xlsx library:', err);
+      
+      // Remove loading indicator
+      if (loadingIndicator.parentNode) {
+        loadingIndicator.parentNode.removeChild(loadingIndicator);
+      }
+      
+      alert('Error loading Excel library. Please check your internet connection and try again.');
+      setShowDownloadOptions(false);
+      resetInvoiceData();
+    });
   };
   
   // Handle download as CSV
   const handleDownloadAsCSV = () => {
-    let csvContent = 'data:text/csv;charset=utf-8,Invoice Details\n';
-    csvContent += `Invoice Number,${invoiceData.invoiceNumber}\n`;
-    csvContent += `Invoice Date,${invoiceData.invoiceDate}\n`;
-    csvContent += `Due Date,${invoiceData.dueDate}\n`;
-    csvContent += '\n';
-    csvContent += 'FROM,\n';
-    csvContent += `${invoiceData.businessName},\n`;
-    csvContent += `${invoiceData.businessAddress},\n`;
-    csvContent += `Phone,${invoiceData.businessPhone}\n`;
-    csvContent += `Email,${invoiceData.businessEmail}\n`;
-    csvContent += '\n';
-    csvContent += 'BILL TO,\n';
-    csvContent += `${invoiceData.clientName},\n`;
-    csvContent += `${invoiceData.clientAddress},\n`;
-    csvContent += `${invoiceData.clientCityState},\n`;
-    csvContent += `Phone,${invoiceData.clientPhone}\n`;
-    csvContent += `Email,${invoiceData.clientEmail}\n`;
-    csvContent += '\n';
-    csvContent += 'Item Description,Quantity,Unit,Rate,Amount\n';
-    
-    invoiceData.items.forEach(item => {
-      csvContent += `${item.description},${item.quantity},${item.unit},${formatCurrency(item.rate)},${formatCurrency(item.amount)}\n`;
-    });
-    
-    csvContent += '\n';
-    csvContent += `Subtotal,${formatCurrency(calculateInvoiceTotals().subtotal)}\n`;
-    csvContent += `Discount,${formatCurrency(invoiceData.discount)}\n`;
-    csvContent += `Tax,${formatCurrency(invoiceData.tax)}\n`;
-    csvContent += `Total,${formatCurrency(calculateInvoiceTotals().total)}\n`;
-    csvContent += `Amount Paid,${formatCurrency(invoiceData.amountPaid)}\n`;
-    csvContent += `Credit Brought Forward from previous,${formatCurrency(invoiceData.creditBroughtForward)}\n`;
-    csvContent += `Amount Due,${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `Invoice_${invoiceData.invoiceNumber}.csv`);
-    document.body.appendChild(link);
-    
-    link.click();
-    
-    // Clean up
-    document.body.removeChild(link);
-    
-    setShowDownloadOptions(false);
+    try {
+      // Show loading indicator
+      const loadingIndicator = document.createElement('div');
+      loadingIndicator.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+      loadingIndicator.textContent = 'Generating CSV file...';
+      document.body.appendChild(loadingIndicator);
+      
+      let csvContent = 'data:text/csv;charset=utf-8,Invoice Details\n';
+      csvContent += `Invoice Number,${invoiceData.invoiceNumber}\n`;
+      csvContent += `Invoice Date,${invoiceData.invoiceDate}\n`;
+      csvContent += `Due Date,${invoiceData.dueDate}\n`;
+      csvContent += '\n';
+      csvContent += 'FROM,\n';
+      csvContent += `${invoiceData.businessName},\n`;
+      csvContent += `${invoiceData.businessAddress},\n`;
+      csvContent += `Phone,${invoiceData.businessPhone}\n`;
+      csvContent += `Email,${invoiceData.businessEmail}\n`;
+      csvContent += '\n';
+      csvContent += 'BILL TO,\n';
+      csvContent += `${invoiceData.clientName},\n`;
+      csvContent += `${invoiceData.clientAddress},\n`;
+      csvContent += `${invoiceData.clientCityState},\n`;
+      csvContent += `Phone,${invoiceData.clientPhone}\n`;
+      csvContent += `Email,${invoiceData.clientEmail}\n`;
+      csvContent += '\n';
+      csvContent += 'Item Description,Quantity,Unit,Rate,Amount\n';
+      
+      invoiceData.items.forEach(item => {
+        // Sanitize data for CSV (escape commas and quotes)
+        const sanitize = (str: string) => {
+          if (typeof str !== 'string') return String(str);
+          if (str.includes(',') || str.includes('\"') || str.includes('\n')) {
+            return `"${str.replace(/\"/g, '\"\"')}"`;
+          }
+          return str;
+        };
+        
+        csvContent += `${sanitize(item.description)},${item.quantity},${sanitize(item.unit)},${sanitize(formatCurrency(item.rate))},${sanitize(formatCurrency(item.amount))}\n`;
+      });
+      
+      csvContent += '\n';
+      csvContent += `Subtotal,${formatCurrency(calculateInvoiceTotals().subtotal)}\n`;
+      csvContent += `Discount,${formatCurrency(invoiceData.discount)}\n`;
+      csvContent += `Tax,${formatCurrency(invoiceData.tax)}\n`;
+      csvContent += `Total,${formatCurrency(calculateInvoiceTotals().total)}\n`;
+      csvContent += `Amount Paid,${formatCurrency(invoiceData.amountPaid)}\n`;
+      csvContent += `Credit Brought Forward from previous,${formatCurrency(invoiceData.creditBroughtForward)}\n`;
+      csvContent += `Amount Due,${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `Invoice_${invoiceData.invoiceNumber}_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      
+      link.click();
+      
+      // Clean up
+      document.body.removeChild(link);
+      
+      // Remove loading indicator
+      if (loadingIndicator.parentNode) {
+        loadingIndicator.parentNode.removeChild(loadingIndicator);
+      }
+      
+      // Show success message
+      const successMsg = document.createElement('div');
+      successMsg.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg z-50';
+      successMsg.textContent = 'CSV file downloaded successfully!';
+      document.body.appendChild(successMsg);
+      
+      setTimeout(() => {
+        if (successMsg.parentNode) {
+          successMsg.parentNode.removeChild(successMsg);
+        }
+      }, 3000);
+      
+      setShowDownloadOptions(false);
+      resetInvoiceData();
+    } catch (error) {
+      console.error('Error generating CSV:', error);
+      
+      // Remove any loading indicators
+      const indicators = document.querySelectorAll('.fixed.top-4.right-4.bg-green-500');
+      indicators.forEach(indicator => {
+        if (indicator.parentNode) {
+          indicator.parentNode.removeChild(indicator);
+        }
+      });
+      
+      alert('Error generating CSV file. Please try again.');
+      setShowDownloadOptions(false);
+      resetInvoiceData();
+    }
   };
   
   // Close download options dialog
