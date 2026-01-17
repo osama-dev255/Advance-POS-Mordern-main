@@ -32,7 +32,8 @@ import {
   Share,
   ExternalLink,
   MessageCircle,
-  RotateCcw
+  RotateCcw,
+  HandCoins
 } from "lucide-react";
 import { getTemplateConfig, saveTemplateConfig, ReceiptTemplateConfig } from '@/utils/templateUtils';
 import { PrintUtils } from '@/utils/printUtils';
@@ -42,6 +43,7 @@ import { saveInvoice, InvoiceData as SavedInvoiceData } from '@/utils/invoiceUti
 import { saveDelivery, DeliveryData } from '@/utils/deliveryUtils';
 import { saveCustomerSettlement, CustomerSettlementData as SavedCustomerSettlementData } from '@/utils/customerSettlementUtils';
 import { SavedDeliveriesSection } from '@/components/SavedDeliveriesSection';
+import { SavedCustomerSettlementsSection } from '@/components/SavedCustomerSettlementsSection';
 
 interface Template {
   id: string;
@@ -293,7 +295,7 @@ interface TemplatesProps {
 }
 
 export const Templates = ({ onBack }: TemplatesProps) => {
-  const [activeTab, setActiveTab] = useState<"manage" | "customize" | "preview" | "savedDeliveries">("manage");
+  const [activeTab, setActiveTab] = useState<"manage" | "customize" | "preview" | "savedDeliveries" | "savedCustomerSettlements">("manage");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [viewingTemplate, setViewingTemplate] = useState<string | null>(null);
   const [templates, setTemplates] = useState<Template[]>([
@@ -735,6 +737,11 @@ We appreciate your business.`,
     const saved = localStorage.getItem('savedDeliveryNotes');
     return saved ? JSON.parse(saved) : [];
   });
+  
+  const [savedCustomerSettlements, setSavedCustomerSettlements] = useState<SavedCustomerSettlementData[]>(() => {
+    const saved = localStorage.getItem('savedCustomerSettlements');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Effect to update savedDeliveryNotes when localStorage changes
   useEffect(() => {
@@ -746,6 +753,16 @@ We appreciate your business.`,
           setSavedDeliveryNotes(parsed);
         } catch (e) {
           console.error('Error parsing saved delivery notes:', e);
+        }
+      }
+      
+      const savedSettlements = localStorage.getItem('savedCustomerSettlements');
+      if (savedSettlements) {
+        try {
+          const parsedSettlements = JSON.parse(savedSettlements);
+          setSavedCustomerSettlements(parsedSettlements);
+        } catch (e) {
+          console.error('Error parsing saved customer settlements:', e);
         }
       }
     };
@@ -881,6 +898,39 @@ We appreciate your business.`,
   const [showCustomerSettlementOptions, setShowCustomerSettlementOptions] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  
+  // Functions to handle customer settlement operations
+  const handleViewCustomerSettlement = (settlementId: string) => {
+    const settlement = savedCustomerSettlements.find(s => s.id === settlementId);
+    if (settlement) {
+      setCustomerSettlementData(settlement);
+      setActiveTab('preview');
+      alert('Customer settlement loaded for viewing');
+    }
+  };
+  
+  const handleLoadCustomerSettlement = (settlementId: string) => {
+    const settlement = savedCustomerSettlements.find(s => s.id === settlementId);
+    if (settlement) {
+      setCustomerSettlementData(settlement);
+      setActiveTab('preview');
+      alert('Customer settlement loaded for editing');
+    }
+  };
+  
+  const handleDeleteSavedCustomerSettlement = (settlementId: string) => {
+    if (confirm('Are you sure you want to delete this saved customer settlement?')) {
+      const updatedSettlements = savedCustomerSettlements.filter(s => s.id !== settlementId);
+      localStorage.setItem('savedCustomerSettlements', JSON.stringify(updatedSettlements));
+      setSavedCustomerSettlements(updatedSettlements);
+      
+      // Trigger storage event to notify other components
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'savedCustomerSettlements',
+        newValue: JSON.stringify(updatedSettlements)
+      }));
+    }
+  };
   
   const [expenseVoucherData, setExpenseVoucherData] = useState<ExpenseVoucherData>({
     voucherNumber: "EV-2024-001",
@@ -3914,6 +3964,14 @@ We appreciate your business.`,
                       <Truck className="h-4 w-4" />
                       Saved Deliveries
                     </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setActiveTab('savedCustomerSettlements')}
+                      className="flex items-center gap-2"
+                    >
+                      <HandCoins className="h-4 w-4" />
+                      Saved Customer Settlements
+                    </Button>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -3956,6 +4014,27 @@ We appreciate your business.`,
                   </Button>
                 </div>
                 <SavedDeliveriesSection 
+                  onBack={() => setActiveTab('manage')} 
+                  onLogout={() => {}} 
+                  username="User" 
+                />
+              </div>
+            ) : activeTab === "savedCustomerSettlements" ? (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-xl font-semibold">Saved Customer Settlements</h3>
+                    <p className="text-sm text-muted-foreground">View and manage your saved customer settlements</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setActiveTab('manage')}
+                    className="flex items-center gap-2"
+                  >
+                    ← Back to Templates
+                  </Button>
+                </div>
+                <SavedCustomerSettlementsSection 
                   onBack={() => setActiveTab('manage')} 
                   onLogout={() => {}} 
                   username="User" 
@@ -4148,6 +4227,16 @@ We appreciate your business.`,
                       <Save className="h-4 w-4 mr-2" />
                       Save
                     </Button>
+                    {currentTemplate?.type === "customer-settlement" && (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setActiveTab('savedCustomerSettlements')}
+                        className="flex items-center gap-2"
+                      >
+                        <HandCoins className="h-4 w-4" />
+                        View Saved Settlements
+                      </Button>
+                    )}
                     <Button variant="outline" onClick={() => setActiveTab("manage")}>
                       Back to Templates
                     </Button>
@@ -4249,6 +4338,48 @@ We appreciate your business.`,
                           </Button>
                         </div>
                       ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Saved customer settlements section - only show when viewing saved settlements */}
+                {activeTab === "savedCustomerSettlements" && (
+                  <div className="border rounded-lg p-4 mb-6">
+                    <h4 className="font-bold mb-2">Saved Customer Settlements:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {savedCustomerSettlements.length > 0 ? (
+                        savedCustomerSettlements.map((settlement) => (
+                          <div key={settlement.id} className="flex items-center gap-2 bg-gray-100 rounded p-2">
+                            <span className="text-sm">{settlement.customerName} - {formatCurrency(settlement.settlementAmount)}</span>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleViewCustomerSettlement(settlement.id)}
+                              className="h-6 px-2"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleLoadCustomerSettlement(settlement.id)}
+                              className="h-6 px-2"
+                            >
+                              Load
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => handleDeleteSavedCustomerSettlement(settlement.id)}
+                              className="h-6 px-2"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No saved customer settlements yet.</p>
+                      )}
                     </div>
                   </div>
                 )}
