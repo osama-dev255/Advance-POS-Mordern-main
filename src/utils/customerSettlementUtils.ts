@@ -2,6 +2,27 @@ import { supabase } from '@/lib/supabaseClient';
 
 const SAVED_SETTLEMENTS_KEY = 'savedSettlements';
 
+// Helper function to validate if a string is a valid UUID
+const isValidUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
+// Helper function to get a valid customer_id (UUID) or null
+const getValidCustomerId = (customerId: string | undefined | null): string | null => {
+  if (!customerId || typeof customerId !== 'string') {
+    return null;
+  }
+  
+  // Check if the customerId looks like a UUID
+  if (isValidUUID(customerId)) {
+    return customerId;
+  }
+  
+  // If it's not a valid UUID format, return null
+  return null;
+};
+
 export interface CustomerSettlementData {
   id: string;
   customerName: string;
@@ -46,7 +67,7 @@ export const saveCustomerSettlement = async (settlement: CustomerSettlementData)
         .insert({
           user_id: user.id,
           customer_name: settlement.customerName || '',
-          customer_id: settlement.customerId || '',
+          customer_id: getValidCustomerId(settlement.customerId),
           customer_phone: settlement.customerPhone || '',
           customer_email: settlement.customerEmail || '',
           reference_number: settlement.referenceNumber || '',
@@ -75,7 +96,7 @@ export const saveCustomerSettlement = async (settlement: CustomerSettlementData)
         .insert({
           user_id: null,
           customer_name: settlement.customerName || '',
-          customer_id: settlement.customerId || '',
+          customer_id: getValidCustomerId(settlement.customerId),
           customer_phone: settlement.customerPhone || '',
           customer_email: settlement.customerEmail || '',
           reference_number: settlement.referenceNumber || '',
@@ -292,7 +313,7 @@ export const updateCustomerSettlement = async (updatedSettlement: CustomerSettle
       .from('saved_customer_settlements')
       .update({
         customer_name: updatedSettlement.customerName || '',
-        customer_id: updatedSettlement.customerId || '',
+        customer_id: getValidCustomerId(updatedSettlement.customerId),
         customer_phone: updatedSettlement.customerPhone || '',
         customer_email: updatedSettlement.customerEmail || '',
         reference_number: updatedSettlement.referenceNumber || '',
