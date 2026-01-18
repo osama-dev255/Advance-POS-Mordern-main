@@ -70,11 +70,21 @@ export const getSavedInvoices = async (): Promise<InvoiceData[]> => {
     // First, try to get from database
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data, error } = await supabase
-        .from('saved_invoices')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      // Check if user is admin to determine query scope
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      let query = supabase.from('saved_invoices').select('*');
+      
+      // Admins can see all invoices, others see only their own
+      if (userData?.role !== 'admin') {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
         
       if (error) {
         console.error('Error retrieving saved invoices from database:', error);
@@ -123,11 +133,21 @@ export const deleteInvoice = async (invoiceId: string): Promise<void> => {
     // Also delete from database
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { error } = await supabase
-        .from('saved_invoices')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('id', invoiceId);
+      // Check if user is admin to determine delete scope
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      let query = supabase.from('saved_invoices').delete();
+      
+      // Admins can delete any invoice, others can only delete their own
+      if (userData?.role !== 'admin') {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { error } = await query.eq('id', invoiceId);
         
       if (error) {
         console.error('Error deleting invoice from database:', error);
@@ -151,28 +171,38 @@ export const updateInvoice = async (updatedInvoice: InvoiceData): Promise<void> 
     // Also update in database
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { error } = await supabase
-        .from('saved_invoices')
-        .update({
-          invoice_number: updatedInvoice.invoiceNumber,
-          date: updatedInvoice.date,
-          customer: updatedInvoice.customer,
-          items: updatedInvoice.items,
-          total: updatedInvoice.total,
-          payment_method: updatedInvoice.paymentMethod,
-          status: updatedInvoice.status,
-          items_list: updatedInvoice.itemsList,
-          subtotal: updatedInvoice.subtotal,
-          tax: updatedInvoice.tax,
-          discount: updatedInvoice.discount,
-          amount_received: updatedInvoice.amountReceived,
-          change: updatedInvoice.change,
-          business_name: updatedInvoice.businessName,
-          business_address: updatedInvoice.businessAddress,
-          business_phone: updatedInvoice.businessPhone
-        })
-        .eq('user_id', user.id)
-        .eq('id', updatedInvoice.id);
+      // Check if user is admin to determine update scope
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      let query = supabase.from('saved_invoices').update({
+        invoice_number: updatedInvoice.invoiceNumber,
+        date: updatedInvoice.date,
+        customer: updatedInvoice.customer,
+        items: updatedInvoice.items,
+        total: updatedInvoice.total,
+        payment_method: updatedInvoice.paymentMethod,
+        status: updatedInvoice.status,
+        items_list: updatedInvoice.itemsList,
+        subtotal: updatedInvoice.subtotal,
+        tax: updatedInvoice.tax,
+        discount: updatedInvoice.discount,
+        amount_received: updatedInvoice.amountReceived,
+        change: updatedInvoice.change,
+        business_name: updatedInvoice.businessName,
+        business_address: updatedInvoice.businessAddress,
+        business_phone: updatedInvoice.businessPhone
+      });
+      
+      // Admins can update any invoice, others can only update their own
+      if (userData?.role !== 'admin') {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { error } = await query.eq('id', updatedInvoice.id);
         
       if (error) {
         console.error('Error updating invoice in database:', error);

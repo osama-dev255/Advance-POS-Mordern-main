@@ -1,9 +1,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatCurrency } from "@/lib/currency";
-import { FileText, Calendar, User, CreditCard, Eye, Download, Trash2, Printer } from "lucide-react";
+import { FileText, Calendar, User, CreditCard, Eye, Download, Trash2, Printer, Lock } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { getCurrentUser, signIn } from "@/services/authService";
+import { getCurrentUserRole } from "@/utils/salesPermissionUtils";
 
 interface InvoiceItem {
   id?: string;
@@ -54,6 +66,20 @@ export const SavedInvoicesCard = ({
   className 
 }: SavedInvoicesCardProps) => {
   const [expanded, setExpanded] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [userRole, setUserRole] = useState<string | null>(null);
+  
+  // Check user role on component mount
+  useEffect(() => {
+    const checkUserRole = async () => {
+      const role = await getCurrentUserRole();
+      setUserRole(role);
+    };
+    
+    checkUserRole();
+  }, []);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -69,140 +95,230 @@ export const SavedInvoicesCard = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  return (
-    <Card className={`hover:shadow-md transition-shadow ${className}`}>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Invoice #{invoice.invoiceNumber}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
-              <Calendar className="h-4 w-4" />
-              {formatDate(invoice.date)}
-            </p>
-          </div>
-          <Badge variant={getStatusVariant(invoice.status)}>
-            {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-          </Badge>
-        </div>
-      </CardHeader>
+  const handleConfirmDelete = async () => {
+    if (!password.trim()) {
+      setPasswordError('Password is required');
+      return;
+    }
+    
+    try {
+      // Attempt to authenticate with the provided password
+      const currentUser = await getCurrentUser();
+      if (!currentUser || !currentUser.email) {
+        setPasswordError('Authentication error. Please log in again.');
+        return;
+      }
       
-      <CardContent>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm truncate">{invoice.customer}</span>
-          </div>
-          
-          <div className="flex justify-between items-center pt-2">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm">{invoice.items} items</span>
+      // Try to sign in with the entered password to verify it
+      const { error } = await signIn(currentUser.email, password);
+      
+      if (error) {
+        setPasswordError('Incorrect password. Please try again.');
+        return;
+      }
+      
+      // If authentication is successful, proceed with deletion
+      onDeleteInvoice();
+      
+      // Close the dialog and reset state
+      setShowDeleteConfirmation(false);
+      setPassword('');
+      setPasswordError('');
+    } catch (error) {
+      setPasswordError('Authentication failed. Please try again.');
+    }
+  };
+  
+  return (
+    <>
+      <Card className={`hover:shadow-md transition-shadow ${className}`}>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Invoice #{invoice.invoiceNumber}
+              </CardTitle>
+              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                <Calendar className="h-4 w-4" />
+                {formatDate(invoice.date)}
+              </p>
             </div>
-            <div className="font-bold">{formatCurrency(invoice.total)}</div>
+            <Badge variant={getStatusVariant(invoice.status)}>
+              {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
+            </Badge>
           </div>
-          
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Payment:</span>
-            <span className="capitalize">{invoice.paymentMethod}</span>
-          </div>
-          
-          {/* Items Table Section */}
-          {invoice.itemsList && invoice.itemsList.length > 0 && (
-            <div className="pt-3">
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full flex items-center justify-between"
-                onClick={() => setExpanded(!expanded)}
-              >
-                <span>Items Details</span>
-                <svg 
-                  className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+        </CardHeader>
+        
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm truncate">{invoice.customer}</span>
+            </div>
+            
+            <div className="flex justify-between items-center pt-2">
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">{invoice.items} items</span>
+              </div>
+              <div className="font-bold">{formatCurrency(invoice.total)}</div>
+            </div>
+            
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Payment:</span>
+              <span className="capitalize">{invoice.paymentMethod}</span>
+            </div>
+            
+            {/* Items Table Section */}
+            {invoice.itemsList && invoice.itemsList.length > 0 && (
+              <div className="pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full flex items-center justify-between"
+                  onClick={() => setExpanded(!expanded)}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </Button>
-              
-              {expanded && (
-                <div className="mt-3 border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="text-left p-2 text-xs sm:text-sm">Item</th>
-                        <th className="text-left p-2 text-xs sm:text-sm">Description</th>
-                        <th className="text-right p-2 text-xs sm:text-sm">Qty</th>
-                        <th className="text-left p-2 text-xs sm:text-sm">Unit</th>
-                        <th className="text-right p-2 text-xs sm:text-sm">Rate</th>
-                        <th className="text-right p-2 text-xs sm:text-sm">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {invoice.itemsList.map((item, index) => (
-                        <tr 
-                          key={item.id || index} 
-                          className={index % 2 === 0 ? "bg-muted/50" : ""}
-                        >
-                          <td className="p-2 text-xs sm:text-sm">{index + 1}</td>
-                          <td className="p-2 text-xs sm:text-sm">{item.name}</td>
-                          <td className="p-2 text-right text-xs sm:text-sm">{item.quantity}</td>
-                          <td className="p-2 text-xs sm:text-sm">{item.unit || ''}</td>
-                          <td className="p-2 text-right text-xs sm:text-sm">{formatCurrency(item.rate ?? item.price ?? 0)}</td>
-                          <td className="p-2 text-right text-xs sm:text-sm font-medium">{formatCurrency(item.amount ?? (item.price != null && item.quantity != null ? item.price * item.quantity : 0))}</td>
+                  <span>Items Details</span>
+                  <svg 
+                    className={`h-4 w-4 transition-transform ${expanded ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Button>
+                
+                {expanded && (
+                  <div className="mt-3 border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-muted">
+                        <tr>
+                          <th className="text-left p-2 text-xs sm:text-sm">Item</th>
+                          <th className="text-left p-2 text-xs sm:text-sm">Description</th>
+                          <th className="text-right p-2 text-xs sm:text-sm">Qty</th>
+                          <th className="text-left p-2 text-xs sm:text-sm">Unit</th>
+                          <th className="text-right p-2 text-xs sm:text-sm">Rate</th>
+                          <th className="text-right p-2 text-xs sm:text-sm">Amount</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody>
+                        {invoice.itemsList.map((item, index) => (
+                          <tr 
+                            key={item.id || index} 
+                            className={index % 2 === 0 ? "bg-muted/50" : ""}
+                          >
+                            <td className="p-2 text-xs sm:text-sm">{index + 1}</td>
+                            <td className="p-2 text-xs sm:text-sm">{item.name}</td>
+                            <td className="p-2 text-right text-xs sm:text-sm">{item.quantity}</td>
+                            <td className="p-2 text-xs sm:text-sm">{item.unit || ''}</td>
+                            <td className="p-2 text-right text-xs sm:text-sm">{formatCurrency(item.rate ?? item.price ?? 0)}</td>
+                            <td className="p-2 text-right text-xs sm:text-sm font-medium">{formatCurrency(item.amount ?? (item.price != null && item.quantity != null ? item.price * item.quantity : 0))}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            <div className="flex gap-2 pt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={onViewDetails}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                View
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={onPrintInvoice}
+              >
+                <Printer className="h-4 w-4 mr-1" />
+                Print
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex-1"
+                onClick={onDownloadInvoice}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download
+              </Button>
+              {userRole === 'admin' && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1"
+                  onClick={() => setShowDeleteConfirmation(true)}
+                  title="Delete Invoice"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               )}
             </div>
-          )}
-          
-          <div className="flex gap-2 pt-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-              onClick={onViewDetails}
-            >
-              <Eye className="h-4 w-4 mr-1" />
-              View
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-              onClick={onPrintInvoice}
-            >
-              <Printer className="h-4 w-4 mr-1" />
-              Print
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-              onClick={onDownloadInvoice}
-            >
-              <Download className="h-4 w-4 mr-1" />
-              Download
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="flex-1"
-              onClick={onDeleteInvoice}
-              title="Delete Invoice"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      
+      {/* Password Confirmation Dialog */}
+      <Dialog open={showDeleteConfirmation} onOpenChange={setShowDeleteConfirmation}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-destructive" />
+              Confirm Deletion
+            </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. Please enter your password to confirm deletion of invoice <strong>#{invoice.invoiceNumber}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password"
+                type="password" 
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (passwordError) setPasswordError('');
+                }}
+                className={passwordError ? "border-destructive" : ""}
+              />
+              {passwordError && (
+                <p className="text-sm text-destructive">{passwordError}</p>
+              )}
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDeleteConfirmation(false);
+                setPassword('');
+                setPasswordError('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleConfirmDelete}
+            >
+              Delete Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
