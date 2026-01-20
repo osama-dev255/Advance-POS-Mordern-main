@@ -43,6 +43,9 @@ interface SavedInvoice {
   discount?: number;
   amountReceived?: number;
   change?: number;
+  amountPaid?: number;
+  creditBroughtForward?: number;
+  amountDue?: number;
   businessName?: string;
   businessAddress?: string;
   businessPhone?: string;

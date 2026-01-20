@@ -36,6 +36,9 @@ interface InvoiceDetailsProps {
   notes?: string;
   amountReceived: number;
   change: number;
+  amountPaid?: number;
+  creditBroughtForward?: number;
+  amountDue?: number;
   businessName?: string;
   businessAddress?: string;
   businessPhone?: string;
@@ -59,6 +62,9 @@ export const InvoiceDetails = ({
   notes,
   amountReceived,
   change,
+  amountPaid,
+  creditBroughtForward,
+  amountDue,
   businessName: propBusinessName,
   businessAddress: propBusinessAddress,
   businessPhone: propBusinessPhone,
@@ -260,15 +266,27 @@ export const InvoiceDetails = ({
                   <span>{formatCurrency(total)}</span>
                 </div>
                 
-                {/* Payment details */}
-                <div className="flex justify-between pt-2 border-t mt-2">
-                  <span className="text-muted-foreground">Amount Received:</span>
-                  <span>{formatCurrency(amountReceived)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Change:</span>
-                  <span>{formatCurrency(change)}</span>
-                </div>
+                {/* Additional payment fields */}
+                {amountPaid !== undefined && (
+                  <div className="flex justify-between pt-2 border-t mt-2">
+                    <span className="text-muted-foreground">Amount Paid:</span>
+                    <span>{formatCurrency(amountPaid)}</span>
+                  </div>
+                )}
+                {creditBroughtForward !== undefined && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Credit Brought Forward:</span>
+                    <span>{formatCurrency(creditBroughtForward)}</span>
+                  </div>
+                )}
+                {amountDue !== undefined && (
+                  <div className="flex justify-between font-bold">
+                    <span>AMOUNT DUE:</span>
+                    <span>{formatCurrency(amountDue)}</span>
+                  </div>
+                )}
+                
+
               </div>
             </div>
           </div>

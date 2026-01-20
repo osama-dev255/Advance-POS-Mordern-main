@@ -435,6 +435,12 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
       
       // Save invoice to localStorage
       try {
+        // Calculate amountDue using the formula: Total - Amount Paid + Credit Brought Forward
+        // For new sales from the terminal, credit brought forward is typically 0
+        const amountPaid = paymentMethod === "debt" ? 0 : (parseFloat(amountReceived) || totalWithTax);
+        const creditBroughtForward = 0; // For new sales, credit brought forward is typically 0
+        const amountDue = totalWithTax - amountPaid + creditBroughtForward;
+        
         const invoiceToSave: InvoiceData = {
           id: createdSale.id || Date.now().toString(),
           invoiceNumber: createdSale.invoice_number || `INV-${Date.now()}`,
@@ -462,6 +468,9 @@ export const SalesCart = ({ username, onBack, onLogout }: SalesCartProps) => {
           tax: tax,
           discount: discountAmount,
           amountReceived: paymentMethod === "debt" ? (parseFloat(amountReceived) || 0) : (parseFloat(amountReceived) || 0),
+          amountPaid: amountPaid,
+          creditBroughtForward: creditBroughtForward,
+          amountDue: amountDue,
           change: paymentMethod === "debt" ? (parseFloat(amountReceived) || 0) - totalWithTax : change,
           businessName: localStorage.getItem('businessName'),
           businessAddress: localStorage.getItem('businessAddress'),

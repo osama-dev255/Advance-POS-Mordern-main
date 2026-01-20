@@ -93,7 +93,23 @@ interface DeliveryNoteData {
   timestamp?: string;
 }
 
-
+interface CustomerSettlementData {
+  customerName: string;
+  customerId: string;
+  customerPhone: string;
+  customerEmail: string;
+  referenceNumber: string;
+  settlementAmount: number;
+  paymentMethod: string;
+  cashierName: string;
+  previousBalance: number;
+  amountPaid: number;
+  newBalance: number;
+  notes: string;
+  date: string;
+  time: string;
+  status: "completed" | "pending" | "cancelled";
+}
 
 interface SavedDeliveryNote {
   id: string;
@@ -272,24 +288,6 @@ interface ComplimentaryGoodsData {
   authorizedByName: string;
   authorizedByTitle: string;
   authorizedDate: string;
-}
-
-interface CustomerSettlementData {
-  customerName: string;
-  customerId: string;
-  customerPhone: string;
-  customerEmail: string;
-  referenceNumber: string;
-  settlementAmount: number;
-  paymentMethod: string;
-  cashierName: string;
-  previousBalance: number;
-  amountPaid: number;
-  newBalance: number;
-  notes: string;
-  date: string;
-  time: string;
-  status: "completed" | "pending" | "cancelled";
 }
 
 interface TemplatesProps {
@@ -4242,7 +4240,7 @@ We appreciate your business.`,
                     <Button variant="outline" onClick={() => setActiveTab("manage")}>
                       Back to Templates
                     </Button>
-                    {(currentTemplate?.type !== "invoice" && currentTemplate?.type !== "delivery-note") && (
+                    {currentTemplate?.type !== "invoice" && currentTemplate?.type !== "delivery-note" && currentTemplate?.type !== "customer-settlement" && (
                       <>
                         <Button onClick={() => {
                           if (currentTemplate?.type === "order-form") {
@@ -4253,61 +4251,6 @@ We appreciate your business.`,
                             window.print();
                           } else if (currentTemplate?.type === "report") {
                             window.print();
-                          } else if (currentTemplate?.type === "customer-settlement") {
-                            // Handle customer settlement print
-                            const customerSettlementContent = generateCleanCustomerSettlementHTML();
-                            
-                            // Create a temporary window for printing
-                            const printWindow = window.open('', '_blank', 'width=800,height=600');
-                            if (printWindow) {
-                              printWindow.document.write(`
-                                <!DOCTYPE html>
-                                <html>
-                                <head>
-                                  <title>Customer Settlement</title>
-                                  <style>
-                                    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-                                    .customer-settlement-container { max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; }
-                                    .text-center { text-align: center; }
-                                    .border-b-2 { border-bottom: 2px solid #000; }
-                                    .pb-2 { padding-bottom: 0.5rem; }
-                                    .font-bold { font-weight: bold; }
-                                    .text-2xl { font-size: 1.5rem; }
-                                    .text-sm { font-size: 0.875rem; }
-                                    .mb-1 { margin-bottom: 0.25rem; }
-                                    .mb-2 { margin-bottom: 0.5rem; }
-                                    .mt-4 { margin-top: 1rem; }
-                                    .mt-8 { margin-top: 2rem; }
-                                    .pt-4 { padding-top: 1rem; }
-                                    .border-t { border-top: 1px solid #ccc; }
-                                    .grid { display: grid; }
-                                    .gap-8 { gap: 2rem; }
-                                    .gap-4 { gap: 1rem; }
-                                    .grid-cols-1 { grid-template-columns: 1fr; }
-                                    .grid-cols-2 { grid-template-columns: 1fr 1fr; }
-                                    @media print {
-                                      body { margin: 0; padding: 10px; }
-                                      .customer-settlement-container { border: none; box-shadow: none; }
-                                    }
-                                  </style>
-                                </head>
-                                <body>
-                                  ${customerSettlementContent}
-                                </body>
-                                </html>
-                              `);
-                              printWindow.document.close();
-                              
-                              // Wait a bit for content to render before printing
-                              setTimeout(() => {
-                                printWindow.focus();
-                                printWindow.print();
-                                printWindow.close();
-                              }, 500);
-                            } else {
-                              // Fallback: Alert user to allow popups
-                              alert('Please enable popups for this site to print the customer settlement');
-                            }
                           } else {
                             handlePrintDeliveryNote();
                           }
@@ -6516,5 +6459,3 @@ Enter choice (1-3):`);
     </div>
   );
 };
-
-export default Templates;
