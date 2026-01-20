@@ -77,6 +77,63 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
     }
   };
 
+  // Helper function to check if a date falls within the selected date range
+  const isDateInRange = (dateValue: string | Date | undefined): boolean => {
+    if (!dateValue) return false;
+    
+    try {
+      const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      switch (dateRange) {
+        case "today":
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          return date >= today && date < tomorrow;
+          
+        case "yesterday":
+          const yesterdayStart = new Date(today);
+          yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+          const todayStart = new Date(today);
+          return date >= yesterdayStart && date < todayStart;
+          
+        case "this-week":
+          const weekAgo = new Date(today);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return date >= weekAgo && date <= today;
+          
+        case "this-month":
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          return date >= monthStart && date <= today;
+          
+        case "last-month":
+          const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          return date >= lastMonthStart && date < thisMonthStart;
+          
+        case "this-year":
+          const yearStart = new Date(now.getFullYear(), 0, 1);
+          return date >= yearStart && date <= today;
+          
+        case "all-time":
+          return true;
+          
+        default:
+          return true;
+      }
+    } catch (error) {
+      console.error('Error parsing date:', error);
+      return false;
+    }
+  };
+
+  // Filter data based on date range
+  const filterDataByDateRange = (data: any[], dateField: string = 'date'): any[] => {
+    if (dateRange === "all-time") return data;
+    return data.filter(item => isDateInRange(item[dateField]));
+  };
+
   // Load saved invoices when report type is changed to saved-invoices
   useEffect(() => {
     if (reportType === "saved-invoices") {
@@ -120,44 +177,51 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
 
   // Handle export
   const handleExport = (format: string) => {
-    const filename = `report_${reportType}_${new Date().toISOString().split('T')[0]}`;
+    const filename = `report_${reportType}_${dateRange}_${new Date().toISOString().split('T')[0]}`;
     
     switch (reportType) {
       case "inventory":
+        // Inventory doesn't have dates, export all data
         if (format === "csv") ExportUtils.exportToCSV(mockProducts, filename);
         else if (format === "excel") ExcelUtils.exportToExcel(mockProducts, filename);
         else if (format === "pdf") PrintUtils.printSalesReport(mockProducts);
         break;
       case "customers":
+        // Customers don't have dates, export all data
         if (format === "csv") ExportUtils.exportToCSV(mockCustomers, filename);
         else if (format === "excel") ExcelUtils.exportToExcel(mockCustomers, filename);
         else if (format === "pdf") ExportUtils.exportToPDF(mockCustomers, filename, "Customer Report");
         break;
       case "suppliers":
+        // Suppliers don't have dates, export all data
         if (format === "csv") ExportUtils.exportToCSV(mockSuppliers, filename);
         else if (format === "excel") ExcelUtils.exportToExcel(mockSuppliers, filename);
         else if (format === "pdf") ExportUtils.exportToPDF(mockSuppliers, filename, "Supplier Report");
         break;
       case "expenses":
-        if (format === "csv") ExportUtils.exportToCSV(mockExpenses, filename);
-        else if (format === "excel") ExcelUtils.exportToExcel(mockExpenses, filename);
-        else if (format === "pdf") ExportUtils.exportToPDF(mockExpenses, filename, "Expense Report");
+        const filteredExpenses = filterDataByDateRange(mockExpenses, 'date');
+        if (format === "csv") ExportUtils.exportToCSV(filteredExpenses, filename);
+        else if (format === "excel") ExcelUtils.exportToExcel(filteredExpenses, filename);
+        else if (format === "pdf") ExportUtils.exportToPDF(filteredExpenses, filename, "Expense Report");
         break;
       case "sales":
       default:
-        if (format === "csv") ExportUtils.exportToCSV(mockTransactions, filename);
-        else if (format === "excel") ExcelUtils.exportToExcel(mockTransactions, filename);
-        else if (format === "pdf") PrintUtils.printSalesReport(mockTransactions);
+        const filteredTransactions = filterDataByDateRange(mockTransactions, 'date');
+        if (format === "csv") ExportUtils.exportToCSV(filteredTransactions, filename);
+        else if (format === "excel") ExcelUtils.exportToExcel(filteredTransactions, filename);
+        else if (format === "pdf") PrintUtils.printSalesReport(filteredTransactions);
         break;
       case "saved-invoices":
-        if (format === "csv") ExportUtils.exportToCSV(savedInvoices, filename);
-        else if (format === "excel") ExcelUtils.exportToExcel(savedInvoices, filename);
-        else if (format === "pdf") ExportUtils.exportToPDF(savedInvoices, filename, "Saved Invoices Report");
+        const filteredSavedInvoices = filterDataByDateRange(savedInvoices, 'date');
+        if (format === "csv") ExportUtils.exportToCSV(filteredSavedInvoices, filename);
+        else if (format === "excel") ExcelUtils.exportToExcel(filteredSavedInvoices, filename);
+        else if (format === "pdf") ExportUtils.exportToPDF(filteredSavedInvoices, filename, "Saved Invoices Report");
         break;
       case "saved-customer-settlements":
-        if (format === "csv") ExportUtils.exportToCSV(savedSettlements, filename);
-        else if (format === "excel") ExcelUtils.exportToExcel(savedSettlements, filename);
-        else if (format === "pdf") ExportUtils.exportToPDF(savedSettlements, filename, "Saved Customer Settlements Report");
+        const filteredSavedSettlements = filterDataByDateRange(savedSettlements, 'date');
+        if (format === "csv") ExportUtils.exportToCSV(filteredSavedSettlements, filename);
+        else if (format === "excel") ExcelUtils.exportToExcel(filteredSavedSettlements, filename);
+        else if (format === "pdf") ExportUtils.exportToPDF(filteredSavedSettlements, filename, "Saved Customer Settlements Report");
         break;
     }
   };
@@ -180,6 +244,7 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
   const renderReportPreview = () => {
     switch (reportType) {
       case "inventory":
+        // Inventory doesn't typically have dates, so show all data
         return (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -206,6 +271,7 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
         );
       
       case "customers":
+        // Customers don't typically have dates, so show all data
         return (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -235,6 +301,7 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
         );
       
       case "suppliers":
+        // Suppliers don't typically have dates, so show all data
         return (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
@@ -264,13 +331,18 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
         );
       
       case "expenses":
-        const totalExpenses = mockExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const filteredExpenses = filterDataByDateRange(mockExpenses, 'date');
+        const totalFilteredExpenses = filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0);
         return (
           <div>
             <div className="mb-4 p-4 bg-muted rounded-lg">
               <div className="flex justify-between">
-                <span>Total Expenses:</span>
-                <span className="font-bold">{formatCurrency(totalExpenses)}</span>
+                <span>Total Expenses ({dateRange}):</span>
+                <span className="font-bold">{formatCurrency(totalFilteredExpenses)}</span>
+              </div>
+              <div className="flex justify-between mt-2">
+                <span>Number of Expenses:</span>
+                <span className="font-bold">{filteredExpenses.length}</span>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -284,14 +356,22 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockExpenses.map((expense) => (
-                    <tr key={expense.id} className="border-b">
-                      <td className="py-2">{expense.date}</td>
-                      <td className="py-2">{expense.category}</td>
-                      <td className="py-2">{expense.description}</td>
-                      <td className="py-2 text-right font-medium">{formatCurrency(expense.amount)}</td>
+                  {filteredExpenses.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                        No expenses found for the selected date range
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredExpenses.map((expense) => (
+                      <tr key={expense.id} className="border-b">
+                        <td className="py-2">{expense.date}</td>
+                        <td className="py-2">{expense.category}</td>
+                        <td className="py-2">{expense.description}</td>
+                        <td className="py-2 text-right font-medium">{formatCurrency(expense.amount)}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -300,17 +380,18 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
       
       case "sales":
       default:
-        const totalSales = mockTransactions.reduce((sum, transaction) => sum + transaction.total, 0);
+        const filteredTransactions = filterDataByDateRange(mockTransactions, 'date');
+        const totalFilteredSales = filteredTransactions.reduce((sum, transaction) => sum + transaction.total, 0);
         return (
           <div>
             <div className="mb-4 p-4 bg-muted rounded-lg">
               <div className="flex justify-between">
-                <span>Total Sales:</span>
-                <span className="font-bold">{formatCurrency(totalSales)}</span>
+                <span>Total Sales ({dateRange}):</span>
+                <span className="font-bold">{formatCurrency(totalFilteredSales)}</span>
               </div>
               <div className="flex justify-between mt-2">
                 <span>Total Transactions:</span>
-                <span className="font-bold">{mockTransactions.length}</span>
+                <span className="font-bold">{filteredTransactions.length}</span>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -324,14 +405,22 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockTransactions.map((transaction) => (
-                    <tr key={transaction.id} className="border-b">
-                      <td className="py-2">{new Date(transaction.date).toLocaleDateString()}</td>
-                      <td className="py-2">{transaction.customer}</td>
-                      <td className="py-2">{transaction.items} items</td>
-                      <td className="py-2 text-right font-medium">{formatCurrency(transaction.total)}</td>
+                  {filteredTransactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-muted-foreground">
+                        No sales found for the selected date range
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredTransactions.map((transaction) => (
+                      <tr key={transaction.id} className="border-b">
+                        <td className="py-2">{new Date(transaction.date).toLocaleDateString()}</td>
+                        <td className="py-2">{transaction.customer}</td>
+                        <td className="py-2">{transaction.items} items</td>
+                        <td className="py-2 text-right font-medium">{formatCurrency(transaction.total)}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -346,32 +435,35 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
           );
         }
         
-        if (savedInvoices.length === 0) {
+        // Apply date filtering to saved invoices
+        const filteredSavedInvoices = filterDataByDateRange(savedInvoices, 'date');
+        
+        if (filteredSavedInvoices.length === 0) {
           return (
             <div className="text-center py-12">
               <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Saved Invoices</h3>
+              <h3 className="text-xl font-semibold mb-2">No Saved Invoices Found</h3>
               <p className="text-muted-foreground mb-4">
-                You haven't saved any invoices yet.
+                No invoices found for the selected date range.
               </p>
               <p className="text-sm text-muted-foreground">
-                Invoices are automatically saved when you complete a transaction in the Sales Terminal.
+                Try selecting a different date range or check if you have saved invoices.
               </p>
             </div>
           );
         }
         
-        const totalInvoices = savedInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
+        const totalFilteredInvoices = filteredSavedInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
         return (
           <div>
             <div className="mb-4 p-4 bg-muted rounded-lg">
               <div className="flex justify-between">
-                <span>Total Invoices:</span>
-                <span className="font-bold">{savedInvoices.length}</span>
+                <span>Total Invoices ({dateRange}):</span>
+                <span className="font-bold">{filteredSavedInvoices.length}</span>
               </div>
               <div className="flex justify-between mt-2">
                 <span>Total Amount:</span>
-                <span className="font-bold">{formatCurrency(totalInvoices)}</span>
+                <span className="font-bold">{formatCurrency(totalFilteredInvoices)}</span>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -387,7 +479,7 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {savedInvoices.map((invoice) => (
+                  {filteredSavedInvoices.map((invoice) => (
                     <tr key={invoice.id} className="border-b">
                       <td className="py-2">#{invoice.invoiceNumber}</td>
                       <td className="py-2">{formatDate(invoice.date)}</td>
@@ -420,32 +512,35 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
           );
         }
         
-        if (savedSettlements.length === 0) {
+        // Apply date filtering to saved settlements
+        const filteredSavedSettlements = filterDataByDateRange(savedSettlements, 'date');
+        
+        if (filteredSavedSettlements.length === 0) {
           return (
             <div className="text-center py-12">
               <Wallet className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Saved Customer Settlements</h3>
+              <h3 className="text-xl font-semibold mb-2">No Saved Customer Settlements Found</h3>
               <p className="text-muted-foreground mb-4">
-                You haven't saved any customer settlements yet.
+                No customer settlements found for the selected date range.
               </p>
               <p className="text-sm text-muted-foreground">
-                Customer settlements are automatically saved when you complete a customer settlement transaction.
+                Try selecting a different date range or check if you have saved settlements.
               </p>
             </div>
           );
         }
         
-        const totalSettlements = savedSettlements.reduce((sum, settlement) => sum + (settlement.settlementAmount || 0), 0);
+        const totalFilteredSettlements = filteredSavedSettlements.reduce((sum, settlement) => sum + (settlement.settlementAmount || 0), 0);
         return (
           <div>
             <div className="mb-4 p-4 bg-muted rounded-lg">
               <div className="flex justify-between">
-                <span>Total Settlements:</span>
-                <span className="font-bold">{savedSettlements.length}</span>
+                <span>Total Settlements ({dateRange}):</span>
+                <span className="font-bold">{filteredSavedSettlements.length}</span>
               </div>
               <div className="flex justify-between mt-2">
                 <span>Total Amount:</span>
-                <span className="font-bold">{formatCurrency(totalSettlements)}</span>
+                <span className="font-bold">{formatCurrency(totalFilteredSettlements)}</span>
               </div>
             </div>
             <div className="overflow-x-auto">
@@ -463,7 +558,7 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {savedSettlements.map((settlement) => (
+                  {filteredSavedSettlements.map((settlement) => (
                     <tr key={settlement.id} className="border-b">
                       <td className="py-2">{settlement.referenceNumber}</td>
                       <td className="py-2">{formatDate(settlement.date)}</td>
