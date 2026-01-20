@@ -18,7 +18,8 @@ import {
 import { ExportUtils } from '@/utils/exportUtils';
 import { PrintUtils } from '@/utils/printUtils';
 import { ExcelUtils } from '@/utils/excelUtils';
-import { getSavedInvoices } from '@/utils/invoiceUtils';
+import { getSavedInvoices } from "@/utils/invoiceUtils";
+import { getSavedSettlements } from "@/utils/customerSettlementUtils";
 import { formatCurrency } from '@/lib/currency';
 
 interface ReportsProps {
@@ -59,7 +60,9 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
   const [dateRange, setDateRange] = useState("this-month");
   const [reportType, setReportType] = useState("sales");
   const [savedInvoices, setSavedInvoices] = useState<any[]>([]);
+  const [savedSettlements, setSavedSettlements] = useState<any[]>([]);
   const [loadingSavedInvoices, setLoadingSavedInvoices] = useState(false);
+  const [loadingSavedSettlements, setLoadingSavedSettlements] = useState(false);
 
   // Helper function to format dates
   const formatDate = (dateValue: string | Date | undefined): string => {
@@ -91,10 +94,27 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
       };
       
       loadInvoices();
+    } else if (reportType === "saved-customer-settlements") {
+      setLoadingSavedSettlements(true);
+      const loadSettlements = async () => {
+        try {
+          const settlements = await getSavedSettlements();
+          setSavedSettlements(settlements);
+        } catch (error) {
+          console.error('Error loading saved settlements:', error);
+          setSavedSettlements([]);
+        } finally {
+          setLoadingSavedSettlements(false);
+        }
+      };
+      
+      loadSettlements();
     } else {
-      // Clear saved invoices when switching away from saved-invoices report
+      // Clear saved data when switching away from these reports
       setSavedInvoices([]);
       setLoadingSavedInvoices(false);
+      setSavedSettlements([]);
+      setLoadingSavedSettlements(false);
     }
   }, [reportType]);
 
@@ -134,6 +154,11 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
         else if (format === "excel") ExcelUtils.exportToExcel(savedInvoices, filename);
         else if (format === "pdf") ExportUtils.exportToPDF(savedInvoices, filename, "Saved Invoices Report");
         break;
+      case "saved-customer-settlements":
+        if (format === "csv") ExportUtils.exportToCSV(savedSettlements, filename);
+        else if (format === "excel") ExcelUtils.exportToExcel(savedSettlements, filename);
+        else if (format === "pdf") ExportUtils.exportToPDF(savedSettlements, filename, "Saved Customer Settlements Report");
+        break;
     }
   };
 
@@ -144,8 +169,9 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
       case "customers": return "Customer Report";
       case "suppliers": return "Supplier Report";
       case "expenses": return "Expense Report";
-      case "sales": 
+      case "sales": return "Sales Report";
       case "saved-invoices": return "Saved Invoices Report";
+      case "saved-customer-settlements": return "Saved Customer Settlements Report";
       default: return "Sales Report";
     }
   };
@@ -385,6 +411,88 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
             </div>
           </div>
         );
+      case "saved-customer-settlements":
+        if (loadingSavedSettlements) {
+          return (
+            <div className="flex justify-center items-center h-64">
+              <p>Loading saved customer settlements...</p>
+            </div>
+          );
+        }
+        
+        if (savedSettlements.length === 0) {
+          return (
+            <div className="text-center py-12">
+              <Wallet className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold mb-2">No Saved Customer Settlements</h3>
+              <p className="text-muted-foreground mb-4">
+                You haven't saved any customer settlements yet.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Customer settlements are automatically saved when you complete a customer settlement transaction.
+              </p>
+            </div>
+          );
+        }
+        
+        const totalSettlements = savedSettlements.reduce((sum, settlement) => sum + (settlement.settlementAmount || 0), 0);
+        return (
+          <div>
+            <div className="mb-4 p-4 bg-muted rounded-lg">
+              <div className="flex justify-between">
+                <span>Total Settlements:</span>
+                <span className="font-bold">{savedSettlements.length}</span>
+              </div>
+              <div className="flex justify-between mt-2">
+                <span>Total Amount:</span>
+                <span className="font-bold">{formatCurrency(totalSettlements)}</span>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b">
+                    <th className="pb-2">Reference</th>
+                    <th className="pb-2">Date</th>
+                    <th className="pb-2">Customer</th>
+                    <th className="pb-2">Previous Balance</th>
+                    <th className="pb-2 text-right">Amount Paid</th>
+                    <th className="pb-2">New Balance</th>
+                    <th className="pb-2">Payment Method</th>
+                    <th className="pb-2">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {savedSettlements.map((settlement) => (
+                    <tr key={settlement.id} className="border-b">
+                      <td className="py-2">{settlement.referenceNumber}</td>
+                      <td className="py-2">{formatDate(settlement.date)}</td>
+                      <td className="py-2">{settlement.customerName}</td>
+                      <td className="py-2">{settlement.previousBalance !== undefined ? formatCurrency(settlement.previousBalance) : 'N/A'}</td>
+                      <td className="py-2 text-right font-medium">{formatCurrency(settlement.settlementAmount)}</td>
+                      <td className="py-2">{settlement.newBalance !== undefined ? formatCurrency(settlement.newBalance) : 'N/A'}</td>
+                      <td className="py-2">
+                        <span className="px-2 py-1 rounded-full text-xs bg-secondary text-secondary-foreground">
+                          {settlement.paymentMethod}
+                        </span>
+                      </td>
+                      <td className="py-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          settlement.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          settlement.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          settlement.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {settlement.status || 'completed'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
     }
   };
 
@@ -457,6 +565,12 @@ export const Reports = ({ username, onBack, onLogout }: ReportsProps) => {
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4" />
                           Saved Invoices Report
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="saved-customer-settlements">
+                        <div className="flex items-center gap-2">
+                          <Wallet className="h-4 w-4" />
+                          Saved Customer Settlements Report
                         </div>
                       </SelectItem>
                     </SelectContent>
