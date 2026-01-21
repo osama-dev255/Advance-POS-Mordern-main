@@ -1660,7 +1660,7 @@ export class PrintUtils {
             ${reportData.data.map((item: any) => `
               <div class="data-row">
                 <span class="data-label">${item.name}:</span>
-                <span class="data-value">$${item.value.toLocaleString()}</span>
+                <span class="data-value">${item.value}</span>
               </div>
             `).join('')}
           </div>

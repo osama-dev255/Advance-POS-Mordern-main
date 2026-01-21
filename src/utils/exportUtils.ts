@@ -2,6 +2,13 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
+// Extend jsPDF interface to include autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: any;
+  }
+}
+
 export class ExportUtils {
   // Export data to CSV
   static exportToCSV(data: any[], filename: string) {
@@ -59,7 +66,7 @@ export class ExportUtils {
       unit: 'mm',
       format: 'a4'
     });
-
+    
     // Add title
     doc.setFontSize(18);
     doc.text(title, doc.internal.pageSize.width / 2, 20, { align: 'center' });
