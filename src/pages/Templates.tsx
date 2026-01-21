@@ -286,10 +286,10 @@ interface CustomerSettlementData {
   previousBalance: number;
   amountPaid: number;
   newBalance: number;
-  notes: string;
+  notes?: string;
   date: string;
   time: string;
-  status: "completed" | "pending" | "cancelled";
+  status?: "completed" | "pending" | "cancelled";
 }
 
 interface TemplatesProps {
@@ -830,6 +830,9 @@ We appreciate your business.`,
     time: new Date().toLocaleTimeString(),
     status: "completed"
   });
+  
+  // State to store the settlement data to be printed (preserved after save)
+  const [settlementToPrint, setSettlementToPrint] = useState<CustomerSettlementData | null>(null);
     
   const [purchaseOrderData, setPurchaseOrderData] = useState<PurchaseOrderData>({
     businessName: "Your Business Name",
@@ -905,7 +908,10 @@ We appreciate your business.`,
   const handleViewCustomerSettlement = (settlementId: string) => {
     const settlement = savedCustomerSettlements.find(s => s.id === settlementId);
     if (settlement) {
-      setCustomerSettlementData(settlement);
+      setCustomerSettlementData({
+        ...settlement,
+        status: settlement.status || "completed"
+      });
       setActiveTab('preview');
       alert('Customer settlement loaded for viewing');
     }
@@ -914,7 +920,10 @@ We appreciate your business.`,
   const handleLoadCustomerSettlement = (settlementId: string) => {
     const settlement = savedCustomerSettlements.find(s => s.id === settlementId);
     if (settlement) {
-      setCustomerSettlementData(settlement);
+      setCustomerSettlementData({
+        ...settlement,
+        status: settlement.status || "completed"
+      });
       setActiveTab('preview');
       alert('Customer settlement loaded for editing');
     }
@@ -1545,6 +1554,9 @@ We appreciate your business.`,
   
   // Function to generate clean customer settlement HTML for printing
   const generateCleanCustomerSettlementHTML = (): string => {
+    // Use the preserved settlement data for printing if available, otherwise use current data
+    const dataToUse = settlementToPrint || customerSettlementData;
+    
     return `
       <div class="customer-settlement-container" style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
         <style>
@@ -1575,41 +1587,41 @@ We appreciate your business.`,
         </style>
         <div class="text-center border-b-2 pb-2">
           <h2 class="text-2xl font-bold">CUSTOMER SETTLEMENT RECEIPT</h2>
-          <p class="text-sm">Receipt #${customerSettlementData.referenceNumber || 'RECEIPT_NUMBER'}</p>
-          <p class="text-sm">Date: ${customerSettlementData.date || new Date().toLocaleDateString()}</p>
-          <p class="text-sm">Time: ${customerSettlementData.time || new Date().toLocaleTimeString()}</p>
+          <p class="text-sm">Receipt #${dataToUse.referenceNumber || 'RECEIPT_NUMBER'}</p>
+          <p class="text-sm">Date: ${dataToUse.date || new Date().toLocaleDateString()}</p>
+          <p class="text-sm">Time: ${dataToUse.time || new Date().toLocaleTimeString()}</p>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
           <div>
             <div class="font-bold mb-1">CUSTOMER INFORMATION:</div>
             <div class="text-sm mb-1">
-              <span class="font-medium">Name:</span> ${customerSettlementData.customerName}
+              <span class="font-medium">Name:</span> ${dataToUse.customerName}
             </div>
             <div class="text-sm mb-1">
-              <span class="font-medium">ID:</span> ${customerSettlementData.customerId}
+              <span class="font-medium">ID:</span> ${dataToUse.customerId}
             </div>
             <div class="text-sm mb-1">
-              <span class="font-medium">Phone:</span> ${customerSettlementData.customerPhone}
+              <span class="font-medium">Phone:</span> ${dataToUse.customerPhone}
             </div>
             <div class="text-sm mb-1">
-              <span class="font-medium">Email:</span> ${customerSettlementData.customerEmail}
+              <span class="font-medium">Email:</span> ${dataToUse.customerEmail}
             </div>
           </div>
           
           <div>
             <div class="font-bold mb-1">SETTLEMENT DETAILS:</div>
             <div class="text-sm mb-1">
-              <span class="font-medium">Reference:</span> ${customerSettlementData.referenceNumber}
+              <span class="font-medium">Reference:</span> ${dataToUse.referenceNumber}
             </div>
             <div class="text-sm mb-1">
-              <span class="font-medium">Amount:</span> TZS ${customerSettlementData.settlementAmount?.toLocaleString() || '0.00'}
+              <span class="font-medium">Amount:</span> TZS ${dataToUse.settlementAmount?.toLocaleString() || '0.00'}
             </div>
             <div class="text-sm mb-1">
-              <span class="font-medium">Payment Method:</span> ${customerSettlementData.paymentMethod}
+              <span class="font-medium">Payment Method:</span> ${dataToUse.paymentMethod}
             </div>
             <div class="text-sm mb-1">
-              <span class="font-medium">Processed by:</span> ${customerSettlementData.cashierName}
+              <span class="font-medium">Processed by:</span> ${dataToUse.cashierName}
             </div>
           </div>
         </div>
@@ -1619,22 +1631,22 @@ We appreciate your business.`,
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="border p-3 rounded">
               <div class="text-sm font-medium">Previous Balance</div>
-              <div class="text-sm">TZS ${customerSettlementData.previousBalance?.toLocaleString() || '0.00'}</div>
+              <div class="text-sm">TZS ${dataToUse.previousBalance?.toLocaleString() || '0.00'}</div>
             </div>
             <div class="border p-3 rounded">
               <div class="text-sm font-medium">Amount Paid</div>
-              <div class="text-sm">TZS ${customerSettlementData.amountPaid?.toLocaleString() || '0.00'}</div>
+              <div class="text-sm">TZS ${dataToUse.amountPaid?.toLocaleString() || '0.00'}</div>
             </div>
             <div class="border p-3 rounded">
               <div class="text-sm font-medium">New Balance</div>
-              <div class="text-sm">TZS ${customerSettlementData.newBalance?.toLocaleString() || '0.00'}</div>
+              <div class="text-sm">TZS ${dataToUse.newBalance?.toLocaleString() || '0.00'}</div>
             </div>
           </div>
         </div>
         
         <div class="mt-4">
           <div class="font-bold mb-2">NOTES:</div>
-          <div class="text-sm">${customerSettlementData.notes || 'No notes'}</div>
+          <div class="text-sm">${dataToUse.notes || 'No notes'}</div>
         </div>
         
         <div class="text-center mt-8 pt-4 border-t">
@@ -2767,6 +2779,8 @@ We appreciate your business.`,
   // Close customer settlement options dialog
   const closeCustomerSettlementOptionsDialog = () => {
     setShowCustomerSettlementOptions(false);
+    // Clear the preserved settlement data
+    setSettlementToPrint(null);
   };
   
   // Function to generate clean invoice HTML for printing
@@ -4188,6 +4202,9 @@ We appreciate your business.`,
                           
                           await saveCustomerSettlement(settlementToSave);
                           
+                          // Preserve the settlement data for printing before resetting the form
+                          setSettlementToPrint(settlementToSave);
+                          
                           // Reset form to default values
                           setCustomerSettlementData({
                             customerName: "Customer Name",
@@ -4242,7 +4259,7 @@ We appreciate your business.`,
                     <Button variant="outline" onClick={() => setActiveTab("manage")}>
                       Back to Templates
                     </Button>
-                    {(currentTemplate?.type !== "invoice" && currentTemplate?.type !== "delivery-note") && (
+{(currentTemplate?.type !== "invoice" && currentTemplate?.type !== "delivery-note" && currentTemplate?.type !== "customer-settlement") && (
                       <>
                         <Button onClick={() => {
                           if (currentTemplate?.type === "order-form") {
@@ -4253,61 +4270,6 @@ We appreciate your business.`,
                             window.print();
                           } else if (currentTemplate?.type === "report") {
                             window.print();
-                          } else if (currentTemplate?.type === "customer-settlement") {
-                            // Handle customer settlement print
-                            const customerSettlementContent = generateCleanCustomerSettlementHTML();
-                            
-                            // Create a temporary window for printing
-                            const printWindow = window.open('', '_blank', 'width=800,height=600');
-                            if (printWindow) {
-                              printWindow.document.write(`
-                                <!DOCTYPE html>
-                                <html>
-                                <head>
-                                  <title>Customer Settlement</title>
-                                  <style>
-                                    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-                                    .customer-settlement-container { max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; }
-                                    .text-center { text-align: center; }
-                                    .border-b-2 { border-bottom: 2px solid #000; }
-                                    .pb-2 { padding-bottom: 0.5rem; }
-                                    .font-bold { font-weight: bold; }
-                                    .text-2xl { font-size: 1.5rem; }
-                                    .text-sm { font-size: 0.875rem; }
-                                    .mb-1 { margin-bottom: 0.25rem; }
-                                    .mb-2 { margin-bottom: 0.5rem; }
-                                    .mt-4 { margin-top: 1rem; }
-                                    .mt-8 { margin-top: 2rem; }
-                                    .pt-4 { padding-top: 1rem; }
-                                    .border-t { border-top: 1px solid #ccc; }
-                                    .grid { display: grid; }
-                                    .gap-8 { gap: 2rem; }
-                                    .gap-4 { gap: 1rem; }
-                                    .grid-cols-1 { grid-template-columns: 1fr; }
-                                    .grid-cols-2 { grid-template-columns: 1fr 1fr; }
-                                    @media print {
-                                      body { margin: 0; padding: 10px; }
-                                      .customer-settlement-container { border: none; box-shadow: none; }
-                                    }
-                                  </style>
-                                </head>
-                                <body>
-                                  ${customerSettlementContent}
-                                </body>
-                                </html>
-                              `);
-                              printWindow.document.close();
-                              
-                              // Wait a bit for content to render before printing
-                              setTimeout(() => {
-                                printWindow.focus();
-                                printWindow.print();
-                                printWindow.close();
-                              }, 500);
-                            } else {
-                              // Fallback: Alert user to allow popups
-                              alert('Please enable popups for this site to print the customer settlement');
-                            }
                           } else {
                             handlePrintDeliveryNote();
                           }
@@ -6360,6 +6322,9 @@ Enter choice (1-3):`);
                       printWindow.focus();
                       printWindow.print();
                       printWindow.close();
+                      
+                      // Clear the preserved settlement data after printing
+                      setSettlementToPrint(null);
                     }, 500);
                   } else {
                     // Fallback: Alert user to allow popups
@@ -6382,6 +6347,9 @@ Enter choice (1-3):`);
                   
                   // Reset form after action
                   resetCustomerSettlementData();
+                  
+                  // Clear the preserved settlement data
+                  setSettlementToPrint(null);
                 }}
                 className="w-full flex items-center justify-start"
                 variant="outline"
@@ -6450,6 +6418,9 @@ Enter choice (1-3):`);
                   
                   // Reset form after action
                   resetCustomerSettlementData();
+                  
+                  // Clear the preserved settlement data
+                  setSettlementToPrint(null);
                 }}
                 className="w-full flex items-center justify-start"
                 variant="outline"
@@ -6479,6 +6450,9 @@ Enter choice (1-3):`);
                   
                   // Reset form after action
                   resetCustomerSettlementData();
+                  
+                  // Clear the preserved settlement data
+                  setSettlementToPrint(null);
                 }}
                 className="w-full flex items-center justify-start"
                 variant="outline"
@@ -6493,6 +6467,9 @@ Enter choice (1-3):`);
                   resetCustomerSettlementData();
                   closeCustomerSettlementOptionsDialog();
                   alert('Customer settlement form has been reset to default layout');
+                  
+                  // Clear the preserved settlement data
+                  setSettlementToPrint(null);
                 }}
                 className="w-full flex items-center justify-start"
                 variant="outline"
@@ -6504,7 +6481,11 @@ Enter choice (1-3):`);
             
             <div className="mt-4 flex justify-end">
               <Button 
-                onClick={closeCustomerSettlementOptionsDialog}
+                onClick={() => {
+                  closeCustomerSettlementOptionsDialog();
+                  // Clear the preserved settlement data
+                  setSettlementToPrint(null);
+                }}
                 variant="outline"
               >
                 Cancel
