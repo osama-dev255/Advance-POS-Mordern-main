@@ -44,11 +44,12 @@ import { saveDelivery, DeliveryData } from '@/utils/deliveryUtils';
 import { saveCustomerSettlement, CustomerSettlementData as SavedCustomerSettlementData } from '@/utils/customerSettlementUtils';
 import { SavedDeliveriesSection } from '@/components/SavedDeliveriesSection';
 import { SavedCustomerSettlementsSection } from '@/components/SavedCustomerSettlementsSection';
+import { SavedSupplierSettlementsSection } from '@/components/SavedSupplierSettlementsSection';
 
 interface Template {
   id: string;
   name: string;
-  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher" | "customer-settlement";
+  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher" | "customer-settlement" | "supplier-settlement" | "goods-received-note";
   description: string;
   content: string;
   lastModified: string;
@@ -292,12 +293,82 @@ interface CustomerSettlementData {
   status?: "completed" | "pending" | "cancelled";
 }
 
+interface SupplierSettlementData {
+  supplierName: string;
+  supplierId: string;
+  supplierPhone: string;
+  supplierEmail: string;
+  referenceNumber: string;
+  settlementAmount: number;
+  paymentMethod: string;
+  processedBy: string;
+  poNumber?: string;
+  previousBalance: number;
+  amountPaid: number;
+  newBalance: number;
+  notes?: string;
+  date: string;
+  time: string;
+  status?: "completed" | "pending" | "cancelled";
+}
+
+interface GRNItem {
+  id: string;
+  description: string;
+  orderedQuantity: number;
+  receivedQuantity: number;
+  unit: string;
+  batchNumber?: string;
+  expiryDate?: string;
+  remarks: string;
+}
+
+interface GRNData {
+  grnNumber: string;
+  date: string;
+  time: string;
+  supplierName: string;
+  supplierId: string;
+  supplierPhone: string;
+  supplierEmail: string;
+  supplierAddress: string;
+  businessName: string;
+  businessAddress: string;
+  businessPhone: string;
+  businessEmail: string;
+  poNumber: string;
+  deliveryNoteNumber: string;
+  vehicleNumber: string;
+  driverName: string;
+  receivedBy: string;
+  items: GRNItem[];
+  qualityCheckNotes: string;
+  discrepancies: string;
+  preparedBy: string;
+  preparedDate: string;
+  checkedBy: string;
+  checkedDate: string;
+  approvedBy: string;
+  approvedDate: string;
+  receivedDate: string;
+  status?: "received" | "checked" | "approved" | "completed";
+  timestamp?: string;
+}
+
+interface SavedGRN {
+  id: string;
+  name: string;
+  data: GRNData;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface TemplatesProps {
   onBack?: () => void;
 }
 
 export const Templates = ({ onBack }: TemplatesProps) => {
-  const [activeTab, setActiveTab] = useState<"manage" | "customize" | "preview" | "savedDeliveries" | "savedCustomerSettlements">("manage");
+  const [activeTab, setActiveTab] = useState<"manage" | "customize" | "preview" | "savedDeliveries" | "savedCustomerSettlements" | "savedSupplierSettlements" | "savedGRNs">("manage");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [viewingTemplate, setViewingTemplate] = useState<string | null>(null);
   const [templates, setTemplates] = useState<Template[]>([
@@ -698,6 +769,92 @@ Thank you for your payment!
 We appreciate your business.`,
       lastModified: "2023-08-15",
       isActive: false
+    },
+    {
+      id: "13",
+      name: "Supplier Settlements Template",
+      type: "supplier-settlement",
+      description: "Professional template for supplier payment settlements and receipts",
+      content: `SUPPLIER SETTLEMENT RECEIPT
+Receipt #[RECEIPT_NUMBER]
+Date: [DATE]
+Time: [TIME]
+
+Supplier Information:
+Name: [SUPPLIER_NAME]
+ID: [SUPPLIER_ID]
+Phone: [SUPPLIER_PHONE]
+Email: [SUPPLIER_EMAIL]
+
+Settlement Details:
+Reference: [REFERENCE_NUMBER]
+PO Number: [PO_NUMBER]
+Amount: [SETTLEMENT_AMOUNT]
+Payment Method: [PAYMENT_METHOD]
+
+Transaction Summary:
+Previous Balance: [PREVIOUS_BALANCE]
+Amount Paid: [AMOUNT_PAID]
+New Balance: [NEW_BALANCE]
+
+Notes:
+[SETTLEMENT_NOTES]
+
+Processed by: [PROCESSED_BY]
+
+Thank you for your business!
+We appreciate working with you.`,
+      lastModified: "2023-08-15",
+      isActive: false
+    },
+    {
+      id: "14",
+      name: "Goods Received Note (GRN)",
+      type: "goods-received-note",
+      description: "Professional template for recording goods received from suppliers",
+      content: `GOODS RECEIVED NOTE
+Document #[GRN_NUMBER]
+Date: [DATE]
+Time: [TIME]
+
+Supplier Information:
+Name: [SUPPLIER_NAME]
+ID: [SUPPLIER_ID]
+Phone: [SUPPLIER_PHONE]
+Email: [SUPPLIER_EMAIL]
+Address: [SUPPLIER_ADDRESS]
+
+Receiving Business:
+Name: [BUSINESS_NAME]
+Address: [BUSINESS_ADDRESS]
+Phone: [BUSINESS_PHONE]
+Email: [BUSINESS_EMAIL]
+
+Delivery Details:
+PO Number: [PO_NUMBER]
+Delivery Note #: [DELIVERY_NOTE_NUMBER]
+Vehicle #: [VEHICLE_NUMBER]
+Driver: [DRIVER_NAME]
+Received By: [RECEIVED_BY]
+
+Items Received:
+[ITEM_LIST]
+
+Quality Check:
+[QUALITY_CHECK_NOTES]
+
+Discrepancies:
+[DISCREPANCIES]
+
+Signatures:
+Prepared By: [PREPARED_BY]    Date: [PREPARED_DATE]
+Checked By: [CHECKED_BY]      Date: [CHECKED_DATE]
+Approved By: [APPROVED_BY]    Date: [APPROVED_DATE]
+Received By: [RECEIVED_BY]    Date: [RECEIVED_DATE]
+
+Thank you for your business!`,
+      lastModified: "2023-08-15",
+      isActive: false
     }
   ]);
   
@@ -744,6 +901,11 @@ We appreciate your business.`,
     const saved = localStorage.getItem('savedCustomerSettlements');
     return saved ? JSON.parse(saved) : [];
   });
+  
+  const [savedSupplierSettlements, setSavedSupplierSettlements] = useState<SupplierSettlementData[]>(() => {
+    const saved = localStorage.getItem('savedSupplierSettlements');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Effect to update savedDeliveryNotes when localStorage changes
   useEffect(() => {
@@ -765,6 +927,26 @@ We appreciate your business.`,
           setSavedCustomerSettlements(parsedSettlements);
         } catch (e) {
           console.error('Error parsing saved customer settlements:', e);
+        }
+      }
+      
+      const savedSupplierSettlements = localStorage.getItem('savedSupplierSettlements');
+      if (savedSupplierSettlements) {
+        try {
+          const parsedSupplierSettlements = JSON.parse(savedSupplierSettlements);
+          setSavedSupplierSettlements(parsedSupplierSettlements);
+        } catch (e) {
+          console.error('Error parsing saved supplier settlements:', e);
+        }
+      }
+      
+      const savedGRNs = localStorage.getItem('savedGRNs');
+      if (savedGRNs) {
+        try {
+          const parsedGRNs = JSON.parse(savedGRNs);
+          setSavedGRNs(parsedGRNs);
+        } catch (e) {
+          console.error('Error parsing saved GRNs:', e);
         }
       }
     };
@@ -813,6 +995,361 @@ We appreciate your business.`,
     });
   };
   
+  // Function to generate a unique supplier ID
+  const generateSupplierId = () => {
+    return `SUPP-${Date.now()}`;
+  };
+  
+  // Function to reset supplier settlement data to default layout
+  const resetSupplierSettlementData = () => {
+    setSupplierSettlementData({
+      supplierName: "Supplier Name",
+      supplierId: generateSupplierId(),
+      supplierPhone: "(555) 987-6543",
+      supplierEmail: "supplier@example.com",
+      referenceNumber: generateSettlementReference(),
+      settlementAmount: 0,
+      paymentMethod: "Bank Transfer",
+      processedBy: "Accountant Name",
+      poNumber: "",
+      previousBalance: 0,
+      amountPaid: 0,
+      newBalance: 0,
+      notes: "",
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString(),
+      status: "completed"
+    });
+  };
+  
+  // Function to reset GRN data to default layout
+  const resetGRNData = () => {
+    setGrnData({
+      grnNumber: generateGRNNumber(),
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString(),
+      supplierName: "Supplier Name",
+      supplierId: generateSupplierId(),
+      supplierPhone: "(555) 987-6543",
+      supplierEmail: "supplier@example.com",
+      supplierAddress: "123 Supplier Street, City, Country",
+      businessName: "YOUR BUSINESS NAME",
+      businessAddress: "123 Business Street, City, Country",
+      businessPhone: "+1234567890",
+      businessEmail: "info@yourbusiness.com",
+      poNumber: "PO-2024-001",
+      deliveryNoteNumber: "DN-001",
+      vehicleNumber: "TRUCK-001",
+      driverName: "John Driver",
+      receivedBy: "Warehouse Staff",
+      items: [
+        { id: "1", description: "Product A", orderedQuantity: 100, receivedQuantity: 100, unit: "pcs", batchNumber: "BATCH-001", expiryDate: "2025-12-31", remarks: "Good condition" },
+        { id: "2", description: "Product B", orderedQuantity: 50, receivedQuantity: 48, unit: "boxes", batchNumber: "BATCH-002", expiryDate: "2026-06-30", remarks: "2 units damaged" },
+        { id: "3", description: "Product C", orderedQuantity: 25, receivedQuantity: 25, unit: "units", batchNumber: "BATCH-003", expiryDate: "2025-09-15", remarks: "" }
+      ],
+      qualityCheckNotes: "All items inspected. Overall condition good. Minor damage to 2 units of Product B.",
+      discrepancies: "Product B: 2 units damaged, will need replacement",
+      preparedBy: "Inventory Clerk",
+      preparedDate: new Date().toISOString().split('T')[0],
+      checkedBy: "Quality Inspector",
+      checkedDate: new Date().toISOString().split('T')[0],
+      approvedBy: "Warehouse Manager",
+      approvedDate: new Date().toISOString().split('T')[0],
+      receivedDate: new Date().toISOString().split('T')[0],
+      status: "completed",
+      timestamp: new Date().toLocaleString()
+    });
+  };
+  
+  // Functions to handle GRN operations
+  const handleViewGRN = (grnId: string) => {
+    const grn = savedGRNs.find(g => g.id === grnId);
+    if (grn) {
+      setGrnData({
+        ...grn.data,
+        status: grn.data.status || "completed"
+      });
+      setActiveTab('preview');
+      alert('GRN loaded for viewing');
+    }
+  };
+  
+  const handleLoadGRN = (grnId: string) => {
+    const grn = savedGRNs.find(g => g.id === grnId);
+    if (grn) {
+      setGrnData({
+        ...grn.data,
+        status: grn.data.status || "completed"
+      });
+      setActiveTab('preview');
+      alert('GRN loaded for editing');
+    }
+  };
+  
+  const handleDeleteSavedGRN = (grnId: string) => {
+    if (confirm('Are you sure you want to delete this saved GRN?')) {
+      const updatedGRNs = savedGRNs.filter(g => g.id !== grnId);
+      localStorage.setItem('savedGRNs', JSON.stringify(updatedGRNs));
+      setSavedGRNs(updatedGRNs);
+      
+      // Trigger storage event to notify other components
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'savedGRNs',
+        newValue: JSON.stringify(updatedGRNs)
+      }));
+    }
+  };
+  
+  const handleSaveGRN = () => {
+    if (!grnData.grnNumber.trim()) {
+      alert('Please enter a GRN number');
+      return;
+    }
+    
+    const newGRN: SavedGRN = {
+      id: Date.now().toString(),
+      name: `GRN-${grnData.grnNumber}`, // Use the actual GRN number for display
+      data: grnData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    const updatedGRNs = [...savedGRNs, newGRN];
+    localStorage.setItem('savedGRNs', JSON.stringify(updatedGRNs));
+    setSavedGRNs(updatedGRNs);
+    
+    // Trigger storage event to notify other components
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'savedGRNs',
+      newValue: JSON.stringify(updatedGRNs)
+    }));
+    
+    alert(`GRN ${grnData.grnNumber} saved successfully!`);
+  };
+  
+  const handlePrintGRN = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Goods Received Note</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px;
+              font-size: 14px;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 20px;
+            }
+            .header h1 {
+              font-size: 24px;
+              margin: 0;
+            }
+            .section {
+              margin-bottom: 20px;
+            }
+            .grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+            }
+            .grid-3 {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 15px;
+            }
+            .signatures {
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr 1fr;
+              gap: 20px;
+              margin-top: 40px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            th, td {
+              border: 1px solid #000;
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+            }
+            .text-right {
+              text-align: right;
+            }
+            .font-bold {
+              font-weight: bold;
+            }
+            .mt-4 {
+              margin-top: 20px;
+            }
+            .mb-2 {
+              margin-bottom: 10px;
+            }
+            .signature-line {
+              margin-top: 40px;
+              padding-top: 5px;
+              border-top: 1px solid #000;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>GOODS RECEIVED NOTE</h1>
+          </div>
+          
+          <div class="grid-3">
+            <div>
+              <p class="font-bold">GRN Number:</p>
+              <p>${grnData.grnNumber}</p>
+            </div>
+            <div>
+              <p class="font-bold">Date:</p>
+              <p>${grnData.date}</p>
+            </div>
+            <div>
+              <p class="font-bold">Time:</p>
+              <p>${grnData.time}</p>
+            </div>
+          </div>
+          
+          <div class="grid">
+            <div>
+              <h3 class="font-bold mb-2">SUPPLIER INFORMATION:</h3>
+              <p><strong>Name:</strong> ${grnData.supplierName}</p>
+              <p><strong>ID:</strong> ${grnData.supplierId}</p>
+              <p><strong>Phone:</strong> ${grnData.supplierPhone}</p>
+              <p><strong>Email:</strong> ${grnData.supplierEmail}</p>
+              <p><strong>Address:</strong> ${grnData.supplierAddress}</p>
+            </div>
+            
+            <div>
+              <h3 class="font-bold mb-2">RECEIVING BUSINESS:</h3>
+              <p><strong>Name:</strong> ${grnData.businessName}</p>
+              <p><strong>Address:</strong> ${grnData.businessAddress}</p>
+              <p><strong>Phone:</strong> ${grnData.businessPhone}</p>
+              <p><strong>Email:</strong> ${grnData.businessEmail}</p>
+            </div>
+          </div>
+          
+          <div class="grid-3">
+            <div>
+              <p class="font-bold">PO Number:</p>
+              <p>${grnData.poNumber || '_________'}</p>
+            </div>
+            <div>
+              <p class="font-bold">Delivery Note #:</p>
+              <p>${grnData.deliveryNoteNumber || '_________'}</p>
+            </div>
+            <div>
+              <p class="font-bold">Vehicle #:</p>
+              <p>${grnData.vehicleNumber || '_________'}</p>
+            </div>
+            <div>
+              <p class="font-bold">Driver:</p>
+              <p>${grnData.driverName || '_________'}</p>
+            </div>
+            <div>
+              <p class="font-bold">Received By:</p>
+              <p>${grnData.receivedBy || '_________'}</p>
+            </div>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">ITEMS RECEIVED:</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Ordered</th>
+                  <th>Received</th>
+                  <th>Unit</th>
+                  <th>Batch #</th>
+                  <th>Expiry</th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${grnData.items.map(item => `
+                  <tr>
+                    <td>${item.description}</td>
+                    <td>${item.orderedQuantity}</td>
+                    <td>${item.receivedQuantity}</td>
+                    <td>${item.unit}</td>
+                    <td>${item.batchNumber || ''}</td>
+                    <td>${item.expiryDate || ''}</td>
+                    <td>${item.remarks}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">QUALITY CHECK:</h3>
+            <p>${grnData.qualityCheckNotes || 'No quality issues noted.'}</p>
+          </div>
+          
+          <div class="section">
+            <h3 class="font-bold mb-2">DISCREPANCIES:</h3>
+            <p>${grnData.discrepancies || 'None'}</p>
+          </div>
+          
+          <div class="signatures">
+            <div>
+              <h4 class="font-bold mb-2">Prepared By</h4>
+              <p>${grnData.preparedBy || '_________'}</p>
+              <p>Date: ${grnData.preparedDate || '_________'}</p>
+              <p class="signature-line">Signature</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold mb-2">Checked By</h4>
+              <p>${grnData.checkedBy || '_________'}</p>
+              <p>Date: ${grnData.checkedDate || '_________'}</p>
+              <p class="signature-line">Signature</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold mb-2">Approved By</h4>
+              <p>${grnData.approvedBy || '_________'}</p>
+              <p>Date: ${grnData.approvedDate || '_________'}</p>
+              <p class="signature-line">Signature</p>
+            </div>
+            
+            <div>
+              <h4 class="font-bold mb-2">Received By</h4>
+              <p>${grnData.receivedBy || '_________'}</p>
+              <p>Date: ${grnData.receivedDate || '_________'}</p>
+              <p class="signature-line">Signature</p>
+            </div>
+          </div>
+          
+          <div class="mt-4 text-center">
+            <p>Thank you for your business!</p>
+          </div>
+        </body>
+        </html>
+      `;
+      
+      printWindow.document.write(printContent);
+      printWindow.document.close();
+      printWindow.print();
+    }
+  };
+  
+  const handleExportGRNAsPDF = () => {
+    // For now, we'll use the print function as PDF export
+    handlePrintGRN();
+  };
+  
   const [customerSettlementData, setCustomerSettlementData] = useState<CustomerSettlementData>({
     customerName: "Customer Name",
     customerId: generateCustomerId(),
@@ -829,6 +1366,74 @@ We appreciate your business.`,
     date: new Date().toISOString().split('T')[0],
     time: new Date().toLocaleTimeString(),
     status: "completed"
+  });
+  
+  const [supplierSettlementData, setSupplierSettlementData] = useState<SupplierSettlementData>({
+    supplierName: "Supplier Name",
+    supplierId: generateSupplierId(),
+    supplierPhone: "(555) 987-6543",
+    supplierEmail: "supplier@example.com",
+    referenceNumber: generateSettlementReference(),
+    settlementAmount: 0,
+    paymentMethod: "Bank Transfer",
+    processedBy: "Accountant Name",
+    poNumber: "",
+    previousBalance: 0,
+    amountPaid: 0,
+    newBalance: 0,
+    notes: "",
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toLocaleTimeString(),
+    status: "completed"
+  });
+  
+  // Function to generate a unique GRN number
+  const generateGRNNumber = () => {
+    return `GRN-${Date.now()}`;
+  };
+  
+  // Initial GRN data
+  const initialGRNData: GRNData = {
+    grnNumber: generateGRNNumber(),
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toLocaleTimeString(),
+    supplierName: "Supplier Name",
+    supplierId: generateSupplierId(),
+    supplierPhone: "(555) 987-6543",
+    supplierEmail: "supplier@example.com",
+    supplierAddress: "123 Supplier Street, City, Country",
+    businessName: "YOUR BUSINESS NAME",
+    businessAddress: "123 Business Street, City, Country",
+    businessPhone: "+1234567890",
+    businessEmail: "info@yourbusiness.com",
+    poNumber: "PO-2024-001",
+    deliveryNoteNumber: "DN-001",
+    vehicleNumber: "TRUCK-001",
+    driverName: "John Driver",
+    receivedBy: "Warehouse Staff",
+    items: [
+      { id: "1", description: "Product A", orderedQuantity: 100, receivedQuantity: 100, unit: "pcs", batchNumber: "BATCH-001", expiryDate: "2025-12-31", remarks: "Good condition" },
+      { id: "2", description: "Product B", orderedQuantity: 50, receivedQuantity: 48, unit: "boxes", batchNumber: "BATCH-002", expiryDate: "2026-06-30", remarks: "2 units damaged" },
+      { id: "3", description: "Product C", orderedQuantity: 25, receivedQuantity: 25, unit: "units", batchNumber: "BATCH-003", expiryDate: "2025-09-15", remarks: "" }
+    ],
+    qualityCheckNotes: "All items inspected. Overall condition good. Minor damage to 2 units of Product B.",
+    discrepancies: "Product B: 2 units damaged, will need replacement",
+    preparedBy: "Inventory Clerk",
+    preparedDate: new Date().toISOString().split('T')[0],
+    checkedBy: "Quality Inspector",
+    checkedDate: new Date().toISOString().split('T')[0],
+    approvedBy: "Warehouse Manager",
+    approvedDate: new Date().toISOString().split('T')[0],
+    receivedDate: new Date().toISOString().split('T')[0],
+    status: "completed",
+    timestamp: new Date().toLocaleString()
+  };
+  
+  const [grnData, setGrnData] = useState<GRNData>(initialGRNData);
+  
+  const [savedGRNs, setSavedGRNs] = useState<SavedGRN[]>(() => {
+    const saved = localStorage.getItem('savedGRNs');
+    return saved ? JSON.parse(saved) : [];
   });
   
   // State to store the settlement data to be printed (preserved after save)
@@ -1048,7 +1653,7 @@ We appreciate your business.`,
 
   const handlePreviewTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
-    if (template && (template.type === "delivery-note" || template.type === "order-form" || template.type === "invoice" || template.type === "expense-voucher" || template.type === "salary-slip" || template.type === "complimentary-goods" || template.type === "report" || template.type === "customer-settlement")) {
+    if (template && (template.type === "delivery-note" || template.type === "order-form" || template.type === "invoice" || template.type === "expense-voucher" || template.type === "salary-slip" || template.type === "complimentary-goods" || template.type === "report" || template.type === "customer-settlement" || template.type === "supplier-settlement" || template.type === "goods-received-note")) {
       setViewingTemplate(templateId);
       setActiveTab("preview");
     } else {
@@ -3867,6 +4472,22 @@ We appreciate your business.`,
     });
   };
   
+  // Handle supplier settlement data changes
+  const handleSupplierSettlementChange = (field: keyof SupplierSettlementData, value: string | number) => {
+    setSupplierSettlementData(prev => {
+      let updatedData = { ...prev, [field]: value };
+      
+      // Calculate new balance when previous balance or amount paid changes
+      if (field === 'previousBalance' || field === 'amountPaid') {
+        const prevBalance = field === 'previousBalance' ? Number(value) : prev.previousBalance;
+        const amountPaid = field === 'amountPaid' ? Number(value) : prev.amountPaid;
+        updatedData.newBalance = prevBalance - amountPaid;
+      }
+      
+      return updatedData;
+    });
+  };
+  
   // Add new complimentary goods item
   const handleAddComplimentaryGoodsItem = () => {
     setComplimentaryGoodsData(prev => ({
@@ -3921,6 +4542,8 @@ We appreciate your business.`,
       case "salary-slip": return <FileUser className="h-5 w-5" />;
       case "complimentary-goods": return <Gift className="h-5 w-5" />;
       case "expense-voucher": return <Wallet className="h-5 w-5" />;
+      case "customer-settlement": return <HandCoins className="h-5 w-5" />;
+      case "supplier-settlement": return <Truck className="h-5 w-5" />;
       default: return <FileText className="h-5 w-5" />;
     }
   };
@@ -3964,7 +4587,11 @@ We appreciate your business.`,
                             ? "Complimentary Goods Preview" 
                             : currentTemplate?.type === "report" 
                               ? "Report Template Preview" 
-                              : "Delivery Note Preview")
+                              : currentTemplate?.type === "customer-settlement" 
+                                ? "Customer Settlement Preview"
+                                : currentTemplate?.type === "supplier-settlement" 
+                                  ? "Supplier Settlement Preview"
+                                  : "Delivery Note Preview")
                   : viewingTemplate 
                     ? `Viewing Template: ${currentTemplate?.name || 'Template'}`
                     : selectedTemplate 
@@ -3993,6 +4620,14 @@ We appreciate your business.`,
                     >
                       <HandCoins className="h-4 w-4" />
                       Saved Customer Settlements
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setActiveTab('savedSupplierSettlements')}
+                      className="flex items-center gap-2"
+                    >
+                      <Truck className="h-4 w-4" />
+                      Saved Supplier Settlements
                     </Button>
                   </div>
                 </div>
@@ -4062,11 +4697,32 @@ We appreciate your business.`,
                   username="User" 
                 />
               </div>
+            ) : activeTab === "savedSupplierSettlements" ? (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-xl font-semibold">Saved Supplier Settlements</h3>
+                    <p className="text-sm text-muted-foreground">View and manage your saved supplier settlements</p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setActiveTab('manage')}
+                    className="flex items-center gap-2"
+                  >
+                    ← Back to Templates
+                  </Button>
+                </div>
+                <SavedSupplierSettlementsSection 
+                  onBack={() => setActiveTab('manage')} 
+                  onLogout={() => {}} 
+                  username="User" 
+                />
+              </div>
             ) : activeTab === "preview" ? (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">
-                    {currentTemplate?.type === "order-form" ? "Purchase Order Preview" : currentTemplate?.type === "invoice" ? "Invoice Preview" : currentTemplate?.type === "expense-voucher" ? "Expense Voucher Preview" : currentTemplate?.type === "salary-slip" ? "Salary Slip Preview" : currentTemplate?.type === "complimentary-goods" ? "Complimentary Goods Preview" : currentTemplate?.type === "report" ? "Report Template Preview" : currentTemplate?.type === "customer-settlement" ? "Customer Settlement Preview" : "Delivery Note Preview"}
+                    {currentTemplate?.type === "order-form" ? "Purchase Order Preview" : currentTemplate?.type === "invoice" ? "Invoice Preview" : currentTemplate?.type === "expense-voucher" ? "Expense Voucher Preview" : currentTemplate?.type === "salary-slip" ? "Salary Slip Preview" : currentTemplate?.type === "complimentary-goods" ? "Complimentary Goods Preview" : currentTemplate?.type === "report" ? "Report Template Preview" : currentTemplate?.type === "customer-settlement" ? "Customer Settlement Preview" : currentTemplate?.type === "supplier-settlement" ? "Supplier Settlement Preview" : currentTemplate?.type === "goods-received-note" ? "Goods Received Note Preview" : "Delivery Note Preview"}
                   </h3>
                   <div className="flex gap-2">
                     {currentTemplate?.type === "order-form" ? (
@@ -4115,6 +4771,22 @@ We appreciate your business.`,
                         placeholder="Settlement Reference"
                         value={settlementReference}
                         onChange={(e) => setSettlementReference(e.target.value)}
+                        className="w-48 h-10"
+                      />
+                    ) : currentTemplate?.type === "supplier-settlement" ? (
+                      <Input
+                        type="text"
+                        placeholder="Settlement Reference"
+                        value={supplierSettlementData.referenceNumber}
+                        onChange={(e) => handleSupplierSettlementChange("referenceNumber", e.target.value)}
+                        className="w-48 h-10"
+                      />
+                    ) : currentTemplate?.type === "goods-received-note" ? (
+                      <Input
+                        type="text"
+                        placeholder="GRN Number"
+                        value={grnData.grnNumber}
+                        onChange={(e) => setGrnData(prev => ({ ...prev, grnNumber: e.target.value }))}
                         className="w-48 h-10"
                       />
                     ) : (
@@ -4248,6 +4920,49 @@ We appreciate your business.`,
                           console.error('Error saving customer settlement:', error);
                           alert('Error saving customer settlement. Please try again.');
                         }
+                      } else if (currentTemplate?.type === "goods-received-note") {
+                        try {
+                          // Validate required fields before saving
+                          if (!grnData.grnNumber || grnData.grnNumber.trim() === "") {
+                            alert("Please enter a valid GRN number.");
+                            return;
+                          }
+                          
+                          if (!grnData.supplierName || grnData.supplierName.trim() === "" || grnData.supplierName === "Supplier Name") {
+                            alert("Please enter a valid supplier name.");
+                            return;
+                          }
+                          
+                          // Prepare GRN data for saving
+                          const grnToSave: SavedGRN = {
+                            id: Date.now().toString(),
+                            name: `GRN-${grnData.grnNumber}`,
+                            data: grnData,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                          };
+                          
+                          console.log("Saving GRN:", grnToSave);
+                          
+                          // Save to localStorage
+                          const updatedGRNs = [...savedGRNs, grnToSave];
+                          localStorage.setItem('savedGRNs', JSON.stringify(updatedGRNs));
+                          setSavedGRNs(updatedGRNs);
+                          
+                          // Trigger storage event
+                          window.dispatchEvent(new StorageEvent('storage', {
+                            key: 'savedGRNs',
+                            newValue: JSON.stringify(updatedGRNs)
+                          }));
+                          
+                          alert(`Goods Received Note ${grnData.grnNumber} saved successfully!`);
+                          
+                          // Reset form to default values
+                          resetGRNData();
+                        } catch (error) {
+                          console.error('Error saving GRN:', error);
+                          alert('Error saving GRN. Please try again.');
+                        }
                       } else {
                         handleSaveDeliveryNote();
                       }
@@ -4268,7 +4983,7 @@ We appreciate your business.`,
                     <Button variant="outline" onClick={() => setActiveTab("manage")}>
                       Back to Templates
                     </Button>
-{(currentTemplate?.type !== "invoice" && currentTemplate?.type !== "delivery-note" && currentTemplate?.type !== "customer-settlement") && (
+                    {(currentTemplate?.type !== "invoice" && currentTemplate?.type !== "delivery-note" && currentTemplate?.type !== "customer-settlement" && currentTemplate?.type !== "goods-received-note" && currentTemplate?.type !== "supplier-settlement") && (
                       <>
                         <Button onClick={() => {
                           if (currentTemplate?.type === "order-form") {
@@ -4278,6 +4993,10 @@ We appreciate your business.`,
                           } else if (currentTemplate?.type === "complimentary-goods") {
                             window.print();
                           } else if (currentTemplate?.type === "report") {
+                            window.print();
+                          } else if (currentTemplate?.type === "supplier-settlement") {
+                            window.print();
+                          } else if (currentTemplate?.type === "goods-received-note") {
                             window.print();
                           } else {
                             handlePrintDeliveryNote();
@@ -4317,6 +5036,28 @@ We appreciate your business.`,
                               const link = document.createElement('a');
                               link.href = url;
                               link.download = `Complimentary_Goods_Voucher_${complimentaryGoodsData.voucherNumber}.html`;
+                              link.click();
+                              URL.revokeObjectURL(url);
+                            }
+                          } else if (currentTemplate?.type === "supplier-settlement") {
+                            const content = document.getElementById('template-preview-content');
+                            if (content) {
+                              const blob = new Blob([content.innerHTML], { type: 'text/html' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `Supplier_Settlement_${supplierSettlementData.referenceNumber}.html`;
+                              link.click();
+                              URL.revokeObjectURL(url);
+                            }
+                          } else if (currentTemplate?.type === "goods-received-note") {
+                            const content = document.getElementById('template-preview-content');
+                            if (content) {
+                              const blob = new Blob([content.innerHTML], { type: 'text/html' });
+                              const url = URL.createObjectURL(blob);
+                              const link = document.createElement('a');
+                              link.href = url;
+                              link.download = `Goods_Received_Note_${grnData.grnNumber}.html`;
                               link.click();
                               URL.revokeObjectURL(url);
                             }
@@ -4370,47 +5111,7 @@ We appreciate your business.`,
                   </div>
                 )}
                 
-                {/* Saved customer settlements section - only show when viewing saved settlements */}
-                {activeTab === "savedCustomerSettlements" && (
-                  <div className="border rounded-lg p-4 mb-6">
-                    <h4 className="font-bold mb-2">Saved Customer Settlements:</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {savedCustomerSettlements.length > 0 ? (
-                        savedCustomerSettlements.map((settlement) => (
-                          <div key={settlement.id} className="flex items-center gap-2 bg-gray-100 rounded p-2">
-                            <span className="text-sm">{settlement.customerName} - {formatCurrency(settlement.settlementAmount)}</span>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleViewCustomerSettlement(settlement.id)}
-                              className="h-6 px-2"
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleLoadCustomerSettlement(settlement.id)}
-                              className="h-6 px-2"
-                            >
-                              Load
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => handleDeleteSavedCustomerSettlement(settlement.id)}
-                              className="h-6 px-2"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No saved customer settlements yet.</p>
-                      )}
-                    </div>
-                  </div>
-                )}
+
                 
                 <div className="border rounded-lg p-6 max-w-4xl mx-auto" id="template-preview-content">
                   <div className="space-y-6">
@@ -5483,6 +6184,542 @@ We appreciate your business.`,
                           <div className="text-sm">We appreciate your business.</div>
                         </div>
                       </div>
+                    ) : currentTemplate?.type === "goods-received-note" ? (
+                      // Goods Received Note Content
+                      <div className="space-y-6">
+                        {/* Header */}
+                        <div className="text-center border-b-2 border-gray-800 pb-2">
+                          <h2 className="text-2xl font-bold">GOODS RECEIVED NOTE</h2>
+                          <p className="text-sm">Document #{grnData.grnNumber || 'GRN_NUMBER'}</p>
+                          <p className="text-sm">Date: {grnData.date || new Date().toLocaleDateString()}</p>
+                          <p className="text-sm">Time: {grnData.time || new Date().toLocaleTimeString()}</p>
+                        </div>
+                        
+                        {/* Supplier and Business Information */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div>
+                            <div className="font-bold mb-1">SUPPLIER INFORMATION:</div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Name:</span>
+                              <Input 
+                                value={grnData.supplierName}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, supplierName: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">ID:</span>
+                              <Input 
+                                value={grnData.supplierId}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, supplierId: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1"
+                                readOnly
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Phone:</span>
+                              <Input 
+                                value={grnData.supplierPhone}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, supplierPhone: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Email:</span>
+                              <Input 
+                                value={grnData.supplierEmail}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, supplierEmail: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Address:</span>
+                              <Textarea 
+                                value={grnData.supplierAddress}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, supplierAddress: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1 min-h-[60px]"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="font-bold mb-1">RECEIVING BUSINESS:</div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Name:</span>
+                              <Input 
+                                value={grnData.businessName}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, businessName: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Address:</span>
+                              <Textarea 
+                                value={grnData.businessAddress}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, businessAddress: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1 min-h-[60px]"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Phone:</span>
+                              <Input 
+                                value={grnData.businessPhone}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, businessPhone: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Email:</span>
+                              <Input 
+                                value={grnData.businessEmail}
+                                onChange={(e) => setGrnData(prev => ({ ...prev, businessEmail: e.target.value }))}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Delivery Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <div className="text-sm font-medium">PO Number:</div>
+                            <Input
+                              value={grnData.poNumber || ""}
+                              onChange={(e) => setGrnData(prev => ({ ...prev, poNumber: e.target.value }))}
+                              className="text-sm p-1 h-8"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Delivery Note #:</div>
+                            <Input
+                              value={grnData.deliveryNoteNumber || ""}
+                              onChange={(e) => setGrnData(prev => ({ ...prev, deliveryNoteNumber: e.target.value }))}
+                              className="text-sm p-1 h-8"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Vehicle #:</div>
+                            <Input
+                              value={grnData.vehicleNumber || ""}
+                              onChange={(e) => setGrnData(prev => ({ ...prev, vehicleNumber: e.target.value }))}
+                              className="text-sm p-1 h-8"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Driver:</div>
+                            <Input
+                              value={grnData.driverName || ""}
+                              onChange={(e) => setGrnData(prev => ({ ...prev, driverName: e.target.value }))}
+                              className="text-sm p-1 h-8"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium">Received By:</div>
+                            <Input
+                              value={grnData.receivedBy || ""}
+                              onChange={(e) => setGrnData(prev => ({ ...prev, receivedBy: e.target.value }))}
+                              className="text-sm p-1 h-8"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Items Table */}
+                        <div>
+                          <div className="font-bold mb-2">ITEMS RECEIVED:</div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full border-collapse border border-gray-300 text-sm">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="border border-gray-300 p-2 text-left">Description</th>
+                                  <th className="border border-gray-300 p-2 text-left">Ordered</th>
+                                  <th className="border border-gray-300 p-2 text-left">Received</th>
+                                  <th className="border border-gray-300 p-2 text-left">Unit</th>
+                                  <th className="border border-gray-300 p-2 text-left">Batch #</th>
+                                  <th className="border border-gray-300 p-2 text-left">Expiry</th>
+                                  <th className="border border-gray-300 p-2 text-left">Remarks</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {grnData.items.map((item) => (
+                                  <tr key={item.id}>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        value={item.description}
+                                        onChange={(e) => setGrnData(prev => ({
+                                          ...prev,
+                                          items: prev.items.map(i => 
+                                            i.id === item.id ? { ...i, description: e.target.value } : i
+                                          )
+                                        }))}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        type="number"
+                                        value={item.orderedQuantity}
+                                        onChange={(e) => setGrnData(prev => ({
+                                          ...prev,
+                                          items: prev.items.map(i => 
+                                            i.id === item.id ? { ...i, orderedQuantity: parseInt(e.target.value) || 0 } : i
+                                          )
+                                        }))}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        type="number"
+                                        value={item.receivedQuantity}
+                                        onChange={(e) => setGrnData(prev => ({
+                                          ...prev,
+                                          items: prev.items.map(i => 
+                                            i.id === item.id ? { ...i, receivedQuantity: parseInt(e.target.value) || 0 } : i
+                                          )
+                                        }))}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        value={item.unit}
+                                        onChange={(e) => setGrnData(prev => ({
+                                          ...prev,
+                                          items: prev.items.map(i => 
+                                            i.id === item.id ? { ...i, unit: e.target.value } : i
+                                          )
+                                        }))}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        value={item.batchNumber || ""}
+                                        onChange={(e) => setGrnData(prev => ({
+                                          ...prev,
+                                          items: prev.items.map(i => 
+                                            i.id === item.id ? { ...i, batchNumber: e.target.value } : i
+                                          )
+                                        }))}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        type="date"
+                                        value={item.expiryDate || ""}
+                                        onChange={(e) => setGrnData(prev => ({
+                                          ...prev,
+                                          items: prev.items.map(i => 
+                                            i.id === item.id ? { ...i, expiryDate: e.target.value } : i
+                                          )
+                                        }))}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        value={item.remarks}
+                                        onChange={(e) => setGrnData(prev => ({
+                                          ...prev,
+                                          items: prev.items.map(i => 
+                                            i.id === item.id ? { ...i, remarks: e.target.value } : i
+                                          )
+                                        }))}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                        
+                        {/* Quality Check and Discrepancies */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div>
+                            <div className="font-bold mb-2">QUALITY CHECK NOTES:</div>
+                            <Textarea
+                              value={grnData.qualityCheckNotes}
+                              onChange={(e) => setGrnData(prev => ({ ...prev, qualityCheckNotes: e.target.value }))}
+                              className="min-h-[80px] text-sm"
+                            />
+                          </div>
+                          <div>
+                            <div className="font-bold mb-2">DISCREPANCIES:</div>
+                            <Textarea
+                              value={grnData.discrepancies}
+                              onChange={(e) => setGrnData(prev => ({ ...prev, discrepancies: e.target.value }))}
+                              className="min-h-[80px] text-sm"
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* Signatures */}
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-8">
+                          <div>
+                            <div className="font-bold mb-2">Prepared By</div>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={grnData.preparedBy}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, preparedBy: e.target.value }))}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  type="date"
+                                  value={grnData.preparedDate}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, preparedDate: e.target.value }))}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="font-bold mb-2">Checked By</div>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={grnData.checkedBy}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, checkedBy: e.target.value }))}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  type="date"
+                                  value={grnData.checkedDate}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, checkedDate: e.target.value }))}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="font-bold mb-2">Approved By</div>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={grnData.approvedBy}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, approvedBy: e.target.value }))}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  type="date"
+                                  value={grnData.approvedDate}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, approvedDate: e.target.value }))}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="font-bold mb-2">Received By</div>
+                            <div className="text-sm space-y-2">
+                              <div>
+                                <span>Name:</span>
+                                <Input 
+                                  value={grnData.receivedBy}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, receivedBy: e.target.value }))}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div>
+                                <span>Date:</span>
+                                <Input 
+                                  type="date"
+                                  value={grnData.receivedDate}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, receivedDate: e.target.value }))}
+                                  className="w-full h-6 p-1 text-sm mt-1"
+                                />
+                              </div>
+                              <div className="text-xs mt-2">(Signature Required)</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : currentTemplate?.type === "supplier-settlement" ? (
+                      // Supplier Settlement Content
+                      <div className="space-y-6">
+                        {/* Header */}
+                        <div className="text-center border-b-2 border-gray-800 pb-2">
+                          <h2 className="text-2xl font-bold">SUPPLIER SETTLEMENT RECEIPT</h2>
+                          <p className="text-sm">Receipt #{supplierSettlementData.referenceNumber || 'RECEIPT_NUMBER'}</p>
+                          <p className="text-sm">Date: {new Date().toLocaleDateString()}</p>
+                          <p className="text-sm">Time: {new Date().toLocaleTimeString()}</p>
+                        </div>
+                                            
+                        {/* Supplier Information */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                          <div>
+                            <div className="font-bold mb-1">SUPPLIER INFORMATION:</div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Name:</span>
+                              <Input 
+                                value={supplierSettlementData.supplierName}
+                                onChange={(e) => handleSupplierSettlementChange("supplierName", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">ID:</span>
+                              <Input 
+                                value={supplierSettlementData.supplierId}
+                                onChange={(e) => handleSupplierSettlementChange("supplierId", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                                readOnly
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Phone:</span>
+                              <Input 
+                                value={supplierSettlementData.supplierPhone}
+                                onChange={(e) => handleSupplierSettlementChange("supplierPhone", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Email:</span>
+                              <Input 
+                                value={supplierSettlementData.supplierEmail}
+                                onChange={(e) => handleSupplierSettlementChange("supplierEmail", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                          </div>
+                                              
+                          <div>
+                            <div className="font-bold mb-1">SETTLEMENT DETAILS:</div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Reference:</span>
+                              <Input 
+                                value={supplierSettlementData.referenceNumber}
+                                onChange={(e) => handleSupplierSettlementChange("referenceNumber", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                                readOnly
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">PO Number:</span>
+                              <Input 
+                                value={supplierSettlementData.poNumber}
+                                onChange={(e) => handleSupplierSettlementChange("poNumber", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Amount:</span>
+                              <div className="flex">
+                                <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
+                                  TZS
+                                </span>
+                                <Input 
+                                  type="number" 
+                                  step="0.01"
+                                  value={supplierSettlementData.settlementAmount}
+                                  onChange={(e) => handleSupplierSettlementChange("settlementAmount", parseFloat(e.target.value) || 0)}
+                                  className="w-full p-1 text-sm mt-1 rounded-l-none"
+                                />
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                Formatted: {formatCurrency(supplierSettlementData.settlementAmount)}
+                              </div>
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Payment Method:</span>
+                              <Input 
+                                value={supplierSettlementData.paymentMethod}
+                                onChange={(e) => handleSupplierSettlementChange("paymentMethod", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Processed by:</span>
+                              <Input 
+                                value={supplierSettlementData.processedBy}
+                                onChange={(e) => handleSupplierSettlementChange("processedBy", e.target.value)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                                            
+                        {/* Transaction Summary */}
+                        <div className="space-y-4">
+                          <div className="font-bold mb-2">TRANSACTION SUMMARY:</div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="border p-3 rounded">
+                              <div className="text-sm font-medium">Previous Balance</div>
+                              <Input 
+                                type="number" 
+                                step="0.01"
+                                value={supplierSettlementData.previousBalance}
+                                onChange={(e) => handleSupplierSettlementChange("previousBalance", parseFloat(e.target.value) || 0)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                              <div className="text-xs text-gray-500 mt-1">
+                                Formatted: {formatCurrency(supplierSettlementData.previousBalance)}
+                              </div>
+                            </div>
+                            <div className="border p-3 rounded">
+                              <div className="text-sm font-medium">Amount Paid</div>
+                              <Input 
+                                type="number" 
+                                step="0.01"
+                                value={supplierSettlementData.amountPaid}
+                                onChange={(e) => handleSupplierSettlementChange("amountPaid", parseFloat(e.target.value) || 0)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                              <div className="text-xs text-gray-500 mt-1">
+                                Formatted: {formatCurrency(supplierSettlementData.amountPaid)}
+                              </div>
+                            </div>
+                            <div className="border p-3 rounded">
+                              <div className="text-sm font-medium">New Balance</div>
+                              <Input 
+                                type="number" 
+                                step="0.01"
+                                value={supplierSettlementData.newBalance}
+                                onChange={(e) => handleSupplierSettlementChange("newBalance", parseFloat(e.target.value) || 0)}
+                                className="w-full p-1 text-sm mt-1"
+                              />
+                              <div className="text-xs text-gray-500 mt-1">
+                                Formatted: {formatCurrency(supplierSettlementData.newBalance)}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                                            
+                        {/* Notes */}
+                        <div>
+                          <div className="font-bold mb-2">NOTES:</div>
+                          <Textarea
+                            value={supplierSettlementData.notes}
+                            onChange={(e) => handleSupplierSettlementChange("notes", e.target.value)}
+                            className="min-h-[60px] p-2 border rounded bg-gray-50 w-full"
+                          />
+                        </div>
+                                            
+                        {/* Footer */}
+                        <div className="text-center mt-8 pt-4 border-t border-gray-300">
+                          <div className="text-sm font-bold">Thank you for your business!</div>
+                          <div className="text-sm">We appreciate working with you.</div>
+                        </div>
+                      </div>
                     ) : (
                       // Delivery Note Content
                       <div className="space-y-6">
@@ -5829,6 +7066,8 @@ We appreciate your business.`,
                           <option value="salary-slip">Salary Slip</option>
                           <option value="complimentary-goods">Complimentary Goods</option>
                           <option value="expense-voucher">Expense Voucher</option>
+                          <option value="customer-settlement">Customer Settlement</option>
+                          <option value="supplier-settlement">Supplier Settlement</option>
                         </select>
                       </div>
                     </div>

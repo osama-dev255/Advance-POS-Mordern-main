@@ -60,6 +60,20 @@ export const getCurrentUser = async () => {
   }
 };
 
+// Get the current user's role
+export const getCurrentUserRole = async () => {
+  try {
+    const user = await getCurrentUser();
+    if (user && user.user_metadata) {
+      return user.user_metadata.role || 'user';
+    }
+    return 'user';
+  } catch (error) {
+    console.error('Error getting current user role:', error);
+    return 'user';
+  }
+};
+
 // Listen for auth state changes
 export const onAuthStateChange = (callback: (event: string, session: any) => void) => {
   const { data: { subscription } } = supabase.auth.onAuthStateChange(callback);
