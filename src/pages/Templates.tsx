@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/currency";
 import { 
   FileText, 
@@ -346,6 +347,9 @@ interface GRNData {
   businessAddress: string;
   businessPhone: string;
   businessEmail: string;
+  businessStockType: 'exempt' | 'vatable' | '';
+  isVatable: boolean;
+  supplierTinNumber: string;
   poNumber: string;
   deliveryNoteNumber: string;
   vehicleNumber: string;
@@ -1049,6 +1053,9 @@ Thank you for your business!`,
       businessAddress: "123 Business Street, City, Country",
       businessPhone: "+1234567890",
       businessEmail: "info@yourbusiness.com",
+      businessStockType: "",
+      isVatable: false,
+      supplierTinNumber: "",
       poNumber: "PO-2024-001",
       deliveryNoteNumber: "DN-001",
       vehicleNumber: "TRUCK-001",
@@ -1085,6 +1092,9 @@ Thank you for your business!`,
     if (grn) {
       setGrnData({
         ...grn.data,
+        businessStockType: grn.data.businessStockType || "",
+        isVatable: grn.data.isVatable ?? false,
+        supplierTinNumber: grn.data.supplierTinNumber || "",
         receivingCosts: grn.data.receivingCosts || [],
         status: grn.data.status || "completed"
       });
@@ -1098,6 +1108,9 @@ Thank you for your business!`,
     if (grn) {
       setGrnData({
         ...grn.data,
+        businessStockType: grn.data.businessStockType || "",
+        isVatable: grn.data.isVatable ?? false,
+        supplierTinNumber: grn.data.supplierTinNumber || "",
         receivingCosts: grn.data.receivingCosts || [],
         status: grn.data.status || "completed"
       });
@@ -1259,6 +1272,9 @@ Thank you for your business!`,
               <p><strong>Address:</strong> ${grnData.businessAddress}</p>
               <p><strong>Phone:</strong> ${grnData.businessPhone}</p>
               <p><strong>Email:</strong> ${grnData.businessEmail}</p>
+              <p><strong>Stock Type:</strong> ${grnData.businessStockType || 'Not specified'}</p>
+              <p><strong>Is Vatable:</strong> ${grnData.isVatable ? 'Yes' : 'No'}</p>
+              ${grnData.isVatable ? `<p><strong>Supplier TIN Number:</strong> ${grnData.supplierTinNumber || 'Not provided'}</p>` : ''}
             </div>
           </div>
           
@@ -1529,6 +1545,9 @@ Thank you for your business!`,
     businessAddress: "123 Business Street, City, Country",
     businessPhone: "+1234567890",
     businessEmail: "info@yourbusiness.com",
+    businessStockType: "",
+    isVatable: false,
+    supplierTinNumber: "",
     poNumber: "PO-2024-001",
     deliveryNoteNumber: "DN-001",
     vehicleNumber: "TRUCK-001",
@@ -1930,6 +1949,9 @@ Thank you for your business!`,
         'Business Address': grnData.businessAddress,
         'Business Phone': grnData.businessPhone,
         'Business Email': grnData.businessEmail,
+        'Business Stock Type': grnData.businessStockType || 'Not specified',
+        'Is Vatable': grnData.isVatable ? 'Yes' : 'No',
+        'Supplier TIN Number': grnData.supplierTinNumber || '',
         'PO Number': grnData.poNumber,
         'Delivery Note #': grnData.deliveryNoteNumber,
         'Vehicle #': grnData.vehicleNumber,
@@ -2173,6 +2195,9 @@ Thank you for your business!`,
         'Business Address': grnData.businessAddress,
         'Business Phone': grnData.businessPhone,
         'Business Email': grnData.businessEmail,
+        'Business Stock Type': grnData.businessStockType || 'Not specified',
+        'Is Vatable': grnData.isVatable ? 'Yes' : 'No',
+        'Supplier TIN Number': grnData.supplierTinNumber || '',
         'PO Number': grnData.poNumber,
         'Delivery Note #': grnData.deliveryNoteNumber,
         'Vehicle #': grnData.vehicleNumber,
@@ -2223,6 +2248,9 @@ Thank you for your business!`,
     csvRows.push(['Business Address', exportData.grnInfo['Business Address']]);
     csvRows.push(['Business Phone', exportData.grnInfo['Business Phone']]);
     csvRows.push(['Business Email', exportData.grnInfo['Business Email']]);
+    csvRows.push(['Business Stock Type', exportData.grnInfo['Business Stock Type']]);
+    csvRows.push(['Is Vatable', exportData.grnInfo['Is Vatable']]);
+    csvRows.push(['Supplier TIN Number', exportData.grnInfo['Supplier TIN Number']]);
     csvRows.push(['PO Number', exportData.grnInfo['PO Number']]);
     csvRows.push(['Delivery Note #', exportData.grnInfo['Delivery Note #']]);
     csvRows.push(['Vehicle #', exportData.grnInfo['Vehicle #']]);
@@ -2340,6 +2368,9 @@ Thank you for your business!`,
         businessAddress: grnData.businessAddress,
         businessPhone: grnData.businessPhone,
         businessEmail: grnData.businessEmail,
+        businessStockType: grnData.businessStockType || 'Not specified',
+        isVatable: grnData.isVatable ? 'Yes' : 'No',
+        supplierTinNumber: grnData.supplierTinNumber || '',
         poNumber: grnData.poNumber,
         deliveryNoteNumber: grnData.deliveryNoteNumber,
         vehicleNumber: grnData.vehicleNumber,
@@ -6759,6 +6790,53 @@ Thank you for your business!`,
                                 className="w-full p-1 text-sm mt-1"
                               />
                             </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Stock Type:</span>
+                              <Select 
+                                value={grnData.businessStockType}
+                                onValueChange={(value) => setGrnData(prev => ({ ...prev, businessStockType: value as 'exempt' | 'vatable' | '' }))}
+                              >
+                                <SelectTrigger className="w-full mt-1">
+                                  <SelectValue placeholder="Select stock type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="exempt">Exempt Stock</SelectItem>
+                                  <SelectItem value="vatable">Vatable Stock</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="text-sm mb-1">
+                              <span className="font-medium">Is Tin Implimented ?:</span>
+                              <div className="flex space-x-2 mt-1">
+                                <Button
+                                  type="button"
+                                  variant={grnData.isVatable ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => setGrnData(prev => ({ ...prev, isVatable: true }))}
+                                >
+                                  Yes
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant={!grnData.isVatable ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => setGrnData(prev => ({ ...prev, isVatable: false }))}
+                                >
+                                  No
+                                </Button>
+                              </div>
+                            </div>
+                            {grnData.isVatable && (
+                              <div className="text-sm mb-1">
+                                <span className="font-medium">Implimented TIN Number:</span>
+                                <Input
+                                  value={grnData.supplierTinNumber}
+                                  onChange={(e) => setGrnData(prev => ({ ...prev, supplierTinNumber: e.target.value }))}
+                                  className="mt-1"
+                                  placeholder="Enter supplier TIN number"
+                                />
+                              </div>
+                            )}
                           </div>
                         </div>
                         
