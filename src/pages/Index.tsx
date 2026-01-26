@@ -50,6 +50,7 @@ import { PayablesReceivables } from "@/pages/PayablesReceivables";
 import { CustomerStock } from "@/pages/CustomerStock";
 import { MonetaryAssets } from "@/pages/MonetaryAssets";
 import { Templates } from "@/pages/Templates";
+import { SavedGRNsSection } from "@/components/SavedGRNsSection";
 
 // Import missing components
 import { Navigation } from "@/components/Navigation";
@@ -298,6 +299,9 @@ export const Index = () => {
       case "templates":
         setCurrentView("comprehensive");
         break;
+      case "saved-grns":
+        setCurrentView("purchase");
+        break;
       default:
         setCurrentView("comprehensive");
     }
@@ -344,7 +348,7 @@ export const Index = () => {
     "expenses", "returns", "debts", "customer-settlements", "supplier-settlements",
     "discounts", "audit", "access-logs", "statements-reports", "register",
     "settings", "scanner", "automated", "payables-receivables",
-    "customer-stock", "monetary-assets", "templates"
+    "customer-stock", "monetary-assets", "templates", "saved-grns"
   ];
 
   if (!authorizedViews.includes(currentView)) {
@@ -1672,6 +1676,15 @@ export const Index = () => {
             case "templates":
               console.log("Rendering Templates");
               return <Templates onBack={handleBack} />;
+            case "saved-grns":
+              console.log("Rendering SavedGRNsSection");
+              return (
+                <SavedGRNsSection
+                  username={user?.email || "admin"}
+                  onBack={handleBack}
+                  onLogout={handleLogout}
+                />
+              );
             default:
               console.log("Rendering default fallback for:", currentView);
               return (

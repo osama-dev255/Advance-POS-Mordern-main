@@ -535,6 +535,176 @@ export class ExportUtils {
     }
   }
 
+  // Export GRN as PDF
+  static exportGRNAsPDF(grn: any, filename: string) {
+    if (!grn) return;
+
+    // Create a new jsPDF instance (receipt size)
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: [80, 297] // 80mm width (standard receipt width) x 297mm height
+    });
+
+    // Set font and size for receipt
+    doc.setFontSize(12);
+    
+    // Add business header
+    doc.setFont(undefined, 'bold');
+    doc.text('GOODS RECEIVED NOTE', doc.internal.pageSize.width / 2, 10, { align: 'center' });
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(8);
+    doc.text('123 Business St, City, Country', doc.internal.pageSize.width / 2, 15, { align: 'center' });
+    doc.text('Phone: (123) 456-7890', doc.internal.pageSize.width / 2, 19, { align: 'center' });
+    
+    // Add separator line
+    doc.line(5, 22, doc.internal.pageSize.width - 5, 22);
+    
+    // Add GRN info
+    doc.setFontSize(8);
+    const grnNumber = grn.receiptNumber || grn.id;
+    const date = new Date().toLocaleDateString();
+    const time = new Date().toLocaleTimeString();
+    
+    doc.text(`GRN #: ${grnNumber}`, 5, 27);
+    doc.text(`Date: ${date}`, 5, 31);
+    doc.text(`Time: ${time}`, 5, 35);
+    
+    // Add separator line
+    doc.line(5, 38, doc.internal.pageSize.width - 5, 38);
+    
+    // Add supplier info
+    let currentY = 39;
+    if (grn.supplier) {
+      doc.setFont(undefined, 'bold');
+      doc.text('Supplier:', 5, currentY);
+      doc.setFont(undefined, 'normal');
+      currentY += 4;
+      doc.text(grn.supplier.name, 5, currentY);
+      currentY += 4;
+      
+      if (grn.supplier.phone) {
+        doc.text(grn.supplier.phone, 5, currentY);
+        currentY += 4;
+      }
+      
+      if (grn.supplier.email) {
+        doc.text(grn.supplier.email, 5, currentY);
+        currentY += 4;
+      }
+      
+      // Add separator line
+      doc.line(5, currentY, doc.internal.pageSize.width - 5, currentY);
+      currentY += 3;
+    }
+    
+    // Add PO and delivery info
+    if (grn.poNumber) {
+      doc.text(`PO #: ${grn.poNumber}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    if (grn.deliveryNoteNumber) {
+      doc.text(`Delivery Note #: ${grn.deliveryNoteNumber}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    if (grn.vehicle) {
+      doc.text(`Vehicle: ${grn.vehicle}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    if (grn.driver) {
+      doc.text(`Driver: ${grn.driver}`, 5, currentY);
+      currentY += 4;
+    }
+    
+    // Add separator line
+    doc.line(5, currentY, doc.internal.pageSize.width - 5, currentY);
+    currentY += 3;
+    
+    // Add items header
+    doc.setFont(undefined, 'bold');
+    doc.text('Items Received:', 5, currentY);
+    currentY += 4;
+    doc.setFont(undefined, 'normal');
+    
+    // Add items
+    if (grn.items && grn.items.length > 0) {
+      grn.items.forEach((item: any) => {
+        const itemName = item.name.length > 15 ? item.name.substring(0, 15) + '...' : item.name;
+        
+        doc.text(itemName, 5, currentY);
+        doc.text(`${item.quantity} ${item.unit || ''}`, 35, currentY);
+        doc.text(`${item.price.toFixed(2)}`, doc.internal.pageSize.width - 15, currentY, { align: 'right' });
+        currentY += 5;
+        
+        // Add total for item if available
+        if (item.total) {
+          doc.text(`Total: ${item.total.toFixed(2)}`, 35, currentY);
+          currentY += 4;
+        }
+      });
+    } else {
+      doc.text('No items', 5, currentY);
+      currentY += 5;
+    }
+    
+    // Add separator line
+    doc.line(5, currentY, doc.internal.pageSize.width - 5, currentY);
+    currentY += 3;
+    
+    // Add totals
+    const subtotal = grn.subtotal || 0;
+    const tax = grn.tax || 0;
+    const discount = grn.discount || 0;
+    const total = grn.total || 0;
+    
+    doc.text('Subtotal:', 5, currentY);
+    doc.text(`${subtotal.toFixed(2)}`, doc.internal.pageSize.width - 15, currentY, { align: 'right' });
+    currentY += 5;
+    
+    if (tax > 0) {
+      doc.text('Tax:', 5, currentY);
+      doc.text(`${tax.toFixed(2)}`, doc.internal.pageSize.width - 15, currentY, { align: 'right' });
+      currentY += 5;
+    }
+    
+    if (discount > 0) {
+      doc.text('Discount:', 5, currentY);
+      doc.text(`-${discount.toFixed(2)}`, doc.internal.pageSize.width - 15, currentY, { align: 'right' });
+      currentY += 5;
+    }
+    
+    doc.setFont(undefined, 'bold');
+    doc.text('TOTAL:', 5, currentY);
+    doc.text(`${total.toFixed(2)}`, doc.internal.pageSize.width - 15, currentY, { align: 'right' });
+    currentY += 7;
+    doc.setFont(undefined, 'normal');
+    
+    // Add separator line
+    doc.line(5, currentY, doc.internal.pageSize.width - 5, currentY);
+    currentY += 5;
+    
+    // Add footer
+    doc.setFontSize(8);
+    doc.text('Goods Received Note', doc.internal.pageSize.width / 2, currentY, { align: 'center' });
+    currentY += 4;
+    doc.text('Thank you for your business!', doc.internal.pageSize.width / 2, currentY, { align: 'center' });
+    
+    // Check if we're on a mobile device
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // For mobile devices, save the PDF and show notification
+      doc.save(`${filename}.pdf`);
+      this.showPreviewNotification("GRN PDF saved to your device. Check your downloads folder.");
+    } else {
+      // For desktop, save the PDF
+      doc.save(`${filename}.pdf`);
+    }
+  }
+
   // Show preview notification for mobile users
   static showPreviewNotification(message: string) {
     // Remove any existing notification

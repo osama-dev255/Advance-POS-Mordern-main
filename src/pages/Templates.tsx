@@ -43,6 +43,7 @@ import WhatsAppUtils from '@/utils/whatsappUtils';
 import { saveInvoice, InvoiceData as SavedInvoiceData } from '@/utils/invoiceUtils';
 import { saveDelivery, DeliveryData } from '@/utils/deliveryUtils';
 import { saveCustomerSettlement, CustomerSettlementData as SavedCustomerSettlementData } from '@/utils/customerSettlementUtils';
+import { saveGRN, SavedGRN as UtilsSavedGRN } from '@/utils/grnUtils';
 import { SavedDeliveriesSection } from '@/components/SavedDeliveriesSection';
 import { SavedCustomerSettlementsSection } from '@/components/SavedCustomerSettlementsSection';
 import { SavedSupplierSettlementsSection } from '@/components/SavedSupplierSettlementsSection';
@@ -956,15 +957,18 @@ Thank you for your business!`,
         }
       }
       
-      const savedGRNs = localStorage.getItem('savedGRNs');
-      if (savedGRNs) {
+      // Load saved GRNs using the proper utility function
+      const loadGRNs = async () => {
         try {
-          const parsedGRNs = JSON.parse(savedGRNs);
-          setSavedGRNs(parsedGRNs);
-        } catch (e) {
-          console.error('Error parsing saved GRNs:', e);
+          const { getSavedGRNs } = await import('@/utils/grnUtils');
+          const savedGRNsData = await getSavedGRNs();
+          setSavedGRNs(savedGRNsData);
+        } catch (error) {
+          console.error('Error loading saved GRNs:', error);
         }
-      }
+      };
+      
+      loadGRNs();
     };
 
     // Add event listener for storage changes
@@ -1119,27 +1123,36 @@ Thank you for your business!`,
     }
   };
   
-  const handleDeleteSavedGRN = (grnId: string) => {
+  const handleDeleteSavedGRN = async (grnId: string) => {
     if (confirm('Are you sure you want to delete this saved GRN?')) {
-      const updatedGRNs = savedGRNs.filter(g => g.id !== grnId);
-      localStorage.setItem('savedGRNs', JSON.stringify(updatedGRNs));
-      setSavedGRNs(updatedGRNs);
-      
-      // Trigger storage event to notify other components
-      window.dispatchEvent(new StorageEvent('storage', {
-        key: 'savedGRNs',
-        newValue: JSON.stringify(updatedGRNs)
-      }));
+      try {
+        // Use the proper deleteGRN utility function
+        const { deleteGRN } = await import('@/utils/grnUtils');
+        await deleteGRN(grnId);
+        
+        // Update local state
+        const updatedGRNs = savedGRNs.filter(g => g.id !== grnId);
+        setSavedGRNs(updatedGRNs);
+        
+        // Trigger storage event to notify other components
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'savedGRNs',
+          newValue: JSON.stringify(updatedGRNs)
+        }));
+      } catch (error) {
+        console.error('Error deleting GRN:', error);
+        alert('Error deleting GRN. Please try again.');
+      }
     }
   };
   
-  const handleSaveGRN = () => {
+  const handleSaveGRN = async () => {
     if (!grnData.grnNumber.trim()) {
       alert('Please enter a GRN number');
       return;
     }
     
-    const newGRN: SavedGRN = {
+    const newGRN: UtilsSavedGRN = {
       id: Date.now().toString(),
       name: `GRN-${grnData.grnNumber}`, // Use the actual GRN number for display
       data: grnData,
@@ -1147,17 +1160,28 @@ Thank you for your business!`,
       updatedAt: new Date().toISOString()
     };
     
-    const updatedGRNs = [...savedGRNs, newGRN];
-    localStorage.setItem('savedGRNs', JSON.stringify(updatedGRNs));
-    setSavedGRNs(updatedGRNs);
-    
-    // Trigger storage event to notify other components
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'savedGRNs',
-      newValue: JSON.stringify(updatedGRNs)
-    }));
-    
-    alert(`GRN ${grnData.grnNumber} saved successfully!`);
+    try {
+      // Use the proper saveGRN utility function
+      await saveGRN(newGRN);
+      
+      // Update local state
+      const updatedGRNs = [...savedGRNs, newGRN];
+      setSavedGRNs(updatedGRNs);
+      
+      // Trigger storage event to notify other components
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'savedGRNs',
+        newValue: JSON.stringify(updatedGRNs)
+      }));
+      
+      alert(`GRN ${grnData.grnNumber} saved successfully!`);
+      
+      // Reset form
+      resetGRNData();
+    } catch (error) {
+      console.error('Error saving GRN:', error);
+      alert('Error saving GRN. Please try again.');
+    }
   };
   
   const handlePrintGRN = () => {

@@ -8,7 +8,8 @@ import {
   BarChart3,
   Settings,
   ShoppingCart,
-  Package
+  Package,
+  PackageCheck
 } from "lucide-react";
 import { hasModuleAccess, getCurrentUserRole } from "@/utils/salesPermissionUtils";
 
@@ -94,6 +95,13 @@ export const PurchaseDashboard = ({ username, onBack, onLogout, onNavigate }: Pu
       title: "Purchase Settings",
       description: "Configure purchasing system preferences and options",
       icon: Settings,
+      color: "bg-white border border-gray-200"
+    },
+    {
+      id: "saved-grns",
+      title: "Saved Goods Received Notes",
+      description: "View and manage saved goods received notes",
+      icon: PackageCheck,
       color: "bg-white border border-gray-200"
     }
   ];
