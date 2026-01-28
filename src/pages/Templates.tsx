@@ -264,6 +264,9 @@ interface ExpenseVoucherData {
   approvedBy: string;
   approvedDate: string;
   notes: string;
+  submittedBySignature?: string;
+  approvedBySignature?: string;
+  signatureDate?: string;
 }
 
 interface SalarySlipData {
@@ -1822,7 +1825,10 @@ Thank you for your business!`,
     purpose: "Monthly marketing expenses for Q4 campaign",
     approvedBy: "Jane Manager",
     approvedDate: "12/5/2025",
-    notes: "All receipts attached."
+    notes: "All receipts attached.",
+    submittedBySignature: "",
+    approvedBySignature: "",
+    signatureDate: ""
   });
   
   const [salarySlipData, setSalarySlipData] = useState<SalarySlipData>({
@@ -7176,32 +7182,89 @@ Thank you for your business!`,
                         {/* Header */}
                         <div className="text-center">
                           <h2 className="text-2xl font-bold">EXPENSE VOUCHER</h2>
-                          <div className="text-xl font-bold mt-2">{expenseVoucherData.voucherNumber}</div>
-                          <div className="text-sm mt-1">Date: {expenseVoucherData.date}</div>
+                          <div className="mt-2">
+                            <Input
+                              value={expenseVoucherData.voucherNumber}
+                              onChange={(e) => handleExpenseVoucherChange("voucherNumber", e.target.value)}
+                              className="text-xl font-bold text-center p-1 h-10"
+                            />
+                          </div>
+                          <div className="mt-1">
+                            <Input
+                              type="date"
+                              value={expenseVoucherData.date}
+                              onChange={(e) => handleExpenseVoucherChange("date", e.target.value)}
+                              className="text-sm p-1 h-8 w-48 mx-auto"
+                            />
+                          </div>
                         </div>
                         
                         {/* Employee Info */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div>
                             <div className="font-bold mb-1">SUBMITTED BY:</div>
-                            <div className="text-sm mb-1">{expenseVoucherData.submittedBy}</div>
-                            <div className="text-sm mb-1">Employee ID: {expenseVoucherData.employeeId}</div>
-                            <div className="text-sm mb-1">Department: {expenseVoucherData.department}</div>
+                            <div className="space-y-2">
+                              <Input
+                                value={expenseVoucherData.submittedBy}
+                                onChange={(e) => handleExpenseVoucherChange("submittedBy", e.target.value)}
+                                className="text-sm p-1 h-8"
+                                placeholder="Name"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">Employee ID:</span>
+                                <Input
+                                  value={expenseVoucherData.employeeId}
+                                  onChange={(e) => handleExpenseVoucherChange("employeeId", e.target.value)}
+                                  className="text-sm p-1 h-8 flex-1"
+                                  placeholder="EMP-00000"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">Department:</span>
+                                <Input
+                                  value={expenseVoucherData.department}
+                                  onChange={(e) => handleExpenseVoucherChange("department", e.target.value)}
+                                  className="text-sm p-1 h-8 flex-1"
+                                  placeholder="Department"
+                                />
+                              </div>
+                            </div>
                           </div>
                           
                           <div>
                             <div className="font-bold mb-1">APPROVAL:</div>
-                            <div className="text-sm mb-1">Approved by: {expenseVoucherData.approvedBy}</div>
-                            <div className="text-sm mb-1">Date: {expenseVoucherData.approvedDate}</div>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">Approved by:</span>
+                                <Input
+                                  value={expenseVoucherData.approvedBy}
+                                  onChange={(e) => handleExpenseVoucherChange("approvedBy", e.target.value)}
+                                  className="text-sm p-1 h-8 flex-1"
+                                  placeholder="Approver Name"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">Date:</span>
+                                <Input
+                                  type="date"
+                                  value={expenseVoucherData.approvedDate}
+                                  onChange={(e) => handleExpenseVoucherChange("approvedDate", e.target.value)}
+                                  className="text-sm p-1 h-8 flex-1"
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
                         
                         {/* Purpose */}
                         <div>
                           <div className="font-bold mb-2">PURPOSE:</div>
-                          <div className="text-sm min-h-[40px]">
-                            {expenseVoucherData.purpose}
-                          </div>
+                          <Textarea
+                            value={expenseVoucherData.purpose}
+                            onChange={(e) => handleExpenseVoucherChange("purpose", e.target.value)}
+                            className="min-h-[80px]"
+                            placeholder="Enter the purpose of this expense voucher..."
+                          />
                         </div>
                         
                         {/* Items Table */}
@@ -7215,22 +7278,54 @@ Thank you for your business!`,
                                   <th className="border border-gray-300 p-2 text-left">Description</th>
                                   <th className="border border-gray-300 p-2 text-left">Category</th>
                                   <th className="border border-gray-300 p-2 text-left">Amount</th>
+                                  <th className="border border-gray-300 p-2 text-left w-20">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {expenseVoucherData.items.map((item) => (
                                   <tr key={item.id}>
                                     <td className="border border-gray-300 p-2">
-                                      {item.date}
+                                      <Input
+                                        type="date"
+                                        value={item.date}
+                                        onChange={(e) => handleExpenseVoucherItemChange(item.id, "date", e.target.value)}
+                                        className="p-1 h-8"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.description}
+                                      <Input
+                                        value={item.description}
+                                        onChange={(e) => handleExpenseVoucherItemChange(item.id, "description", e.target.value)}
+                                        className="p-1 h-8"
+                                        placeholder="Description"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.category}
+                                      <Input
+                                        value={item.category}
+                                        onChange={(e) => handleExpenseVoucherItemChange(item.id, "category", e.target.value)}
+                                        className="p-1 h-8"
+                                        placeholder="Category"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {formatCurrency(item.amount)}
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={item.amount}
+                                        onChange={(e) => handleExpenseVoucherItemChange(item.id, "amount", parseFloat(e.target.value) || 0)}
+                                        className="p-1 h-8 w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Button
+                                        onClick={() => handleRemoveExpenseVoucherItem(item.id)}
+                                        variant="outline"
+                                        size="sm"
+                                        className="p-1 h-8"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
                                     </td>
                                   </tr>
                                 ))}
@@ -7259,9 +7354,12 @@ Thank you for your business!`,
                         {/* Notes */}
                         <div>
                           <div className="font-bold mb-2">NOTES:</div>
-                          <div className="text-sm min-h-[40px]">
-                            {expenseVoucherData.notes}
-                          </div>
+                          <Textarea
+                            value={expenseVoucherData.notes}
+                            onChange={(e) => handleExpenseVoucherChange("notes", e.target.value)}
+                            className="min-h-[80px]"
+                            placeholder="Additional notes..."
+                          />
                         </div>
                         
                         {/* Signatures */}
@@ -7269,8 +7367,13 @@ Thank you for your business!`,
                           <div>
                             <div className="font-bold mb-2">SUBMITTED BY</div>
                             <div className="text-sm space-y-2">
-                              <div className="border-t border-black pt-1 mt-8">
-                                <div className="text-xs">Name & Signature</div>
+                              <div className="pt-1 mt-8">
+                                <Input
+                                  value={expenseVoucherData.submittedBySignature || ""}
+                                  onChange={(e) => handleExpenseVoucherChange("submittedBySignature", e.target.value)}
+                                  className="text-xs p-1 h-8 border-b border-black rounded-none focus:ring-0 focus:border-black"
+                                  placeholder="Name & Signature"
+                                />
                               </div>
                             </div>
                           </div>
@@ -7278,8 +7381,13 @@ Thank you for your business!`,
                           <div>
                             <div className="font-bold mb-2">APPROVED BY</div>
                             <div className="text-sm space-y-2">
-                              <div className="border-t border-black pt-1 mt-8">
-                                <div className="text-xs">Name & Signature</div>
+                              <div className="pt-1 mt-8">
+                                <Input
+                                  value={expenseVoucherData.approvedBySignature || ""}
+                                  onChange={(e) => handleExpenseVoucherChange("approvedBySignature", e.target.value)}
+                                  className="text-xs p-1 h-8 border-b border-black rounded-none focus:ring-0 focus:border-black"
+                                  placeholder="Name & Signature"
+                                />
                               </div>
                             </div>
                           </div>
@@ -7287,8 +7395,13 @@ Thank you for your business!`,
                           <div>
                             <div className="font-bold mb-2">DATE</div>
                             <div className="text-sm space-y-2">
-                              <div className="border-t border-black pt-1 mt-8">
-                                <div className="text-xs">&nbsp;</div>
+                              <div className="pt-1 mt-8">
+                                <Input
+                                  type="date"
+                                  value={expenseVoucherData.signatureDate || ""}
+                                  onChange={(e) => handleExpenseVoucherChange("signatureDate", e.target.value)}
+                                  className="text-xs p-1 h-8 border-b border-black rounded-none focus:ring-0 focus:border-black w-full"
+                                />
                               </div>
                             </div>
                           </div>
