@@ -53,7 +53,7 @@ import { SavedSupplierSettlementsSection } from '@/components/SavedSupplierSettl
 interface Template {
   id: string;
   name: string;
-  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher" | "customer-settlement" | "supplier-settlement" | "goods-received-note";
+  type: "delivery-note" | "order-form" | "contract" | "invoice" | "receipt" | "notice" | "quotation" | "report" | "salary-slip" | "complimentary-goods" | "expense-voucher" | "customer-settlement" | "supplier-settlement" | "goods-received-note" | "purchase-order";
   description: string;
   content: string;
   lastModified: string;
@@ -151,6 +151,34 @@ interface PurchaseOrderItem {
   total: number;
 }
 
+interface SavedPurchaseOrderData {
+  id: string;
+  poNumber: string;
+  date: string;
+  supplier: string;
+  items: number;
+  total: number;
+  paymentMethod: string;
+  status: string;
+  itemsList: Array<{
+    name: string;
+    quantity: number;
+    unit: string;
+    unitPrice: number;
+    total: number;
+  }>;
+  subtotal: number;
+  tax: number;
+  discount: number;
+  shipping: number;
+  paymentTerms: string;
+  deliveryInstructions: string;
+  notes: string;
+  authorizedByName: string;
+  authorizedBySignature: string;
+  authorizationDate: string;
+}
+
 interface PurchaseOrderData {
   businessName: string;
   businessAddress: string;
@@ -175,6 +203,8 @@ interface PurchaseOrderData {
   authorizedByName: string;
   authorizedBySignature: string;
   authorizationDate: string;
+  requestedBy?: string;
+  approvedBy?: string;
 }
 
 interface InvoiceItem {
@@ -925,6 +955,11 @@ Thank you for your business!`,
     const saved = localStorage.getItem('savedSupplierSettlements');
     return saved ? JSON.parse(saved) : [];
   });
+  
+  const [savedPurchaseOrders, setSavedPurchaseOrders] = useState<any[]>(() => {
+    const saved = localStorage.getItem('savedPurchaseOrders');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // Effect to update savedDeliveryNotes when localStorage changes
   useEffect(() => {
@@ -956,6 +991,16 @@ Thank you for your business!`,
           setSavedSupplierSettlements(parsedSupplierSettlements);
         } catch (e) {
           console.error('Error parsing saved supplier settlements:', e);
+        }
+      }
+      
+      const savedPurchaseOrders = localStorage.getItem('savedPurchaseOrders');
+      if (savedPurchaseOrders) {
+        try {
+          const parsedPurchaseOrders = JSON.parse(savedPurchaseOrders);
+          setSavedPurchaseOrders(parsedPurchaseOrders);
+        } catch (e) {
+          console.error('Error parsing saved purchase orders:', e);
         }
       }
       
@@ -1044,6 +1089,41 @@ Thank you for your business!`,
     });
   };
   
+  // Function to reset purchase order data to default layout
+  const resetPurchaseOrderData = () => {
+    setPurchaseOrderData({
+      businessName: "Your Business Name",
+      businessAddress: "123 Business Street",
+      businessPhone: "(555) 987-6543",
+      businessEmail: "info@yourbusiness.com",
+      supplierName: "Supplier Company Name",
+      supplierAddress: "123 Supplier Street",
+      supplierPhone: "(555) 123-4567",
+      supplierEmail: "supplier@example.com",
+      poNumber: "PO-2024-001",
+      date: new Date().toISOString().split('T')[0],
+      expectedDelivery: "",
+      items: [
+        { id: "1", description: "Office Chairs", quantity: 10, unit: "EA", unitPrice: 89.99, total: 899.90 },
+        { id: "2", description: "Desk Lamps", quantity: 15, unit: "EA", unitPrice: 24.50, total: 367.50 },
+        { id: "3", description: "Filing Cabinets", quantity: 3, unit: "EA", unitPrice: 149.99, total: 449.97 }
+      ],
+      subtotal: 1717.37,
+      tax: 145.98,
+      discount: 0,
+      shipping: 45.00,
+      total: 1908.35,
+      paymentTerms: "Net 30",
+      deliveryInstructions: "Ground",
+      notes: "Please deliver by Friday. Call before delivery.",
+      authorizedByName: "Jane Manager",
+      authorizedBySignature: "Approved for purchase per budget approval.",
+      authorizationDate: "",
+      requestedBy: "",
+      approvedBy: ""
+    });
+  };
+
   // Function to reset GRN data to default layout
   const resetGRNData = () => {
     setGrnData({
@@ -1640,7 +1720,9 @@ Thank you for your business!`,
     notes: "Please deliver by Friday. Call before delivery.",
     authorizedByName: "Jane Manager",
     authorizedBySignature: "Approved for purchase per budget approval.",
-    authorizationDate: ""
+    authorizationDate: "",
+    requestedBy: "",
+    approvedBy: ""
   });
   
   // Initialize invoice data with current date and time-based invoice number
@@ -1682,6 +1764,7 @@ Thank you for your business!`,
   const [showCustomerSettlementOptions, setShowCustomerSettlementOptions] = useState(false);
   const [showSupplierSettlementOptions, setShowSupplierSettlementOptions] = useState(false);
   const [showGRNOptions, setShowGRNOptions] = useState(false);
+  const [showPurchaseOrderOptions, setShowPurchaseOrderOptions] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   
@@ -1927,6 +2010,65 @@ Thank you for your business!`,
       } catch (error) {
         console.error('Error saving delivery:', error);
         alert('Error saving delivery. Please try again.');
+      }
+    } else if (currentTemplate?.type === "purchase-order") {
+      // For purchase order templates, automatically save to saved purchase orders
+      try {
+        // Calculate total items
+        const totalItems = purchaseOrderData.items.reduce((sum, item) => sum + item.quantity, 0);
+        
+        // Create purchase order data for saving
+        const purchaseOrderToSave: SavedPurchaseOrderData = {
+          id: purchaseOrderData.poNumber, // Use PO number as ID
+          poNumber: purchaseOrderData.poNumber,
+          date: purchaseOrderData.date,
+          supplier: purchaseOrderData.supplierName,
+          items: totalItems, // Total number of items
+          total: purchaseOrderData.total,
+          paymentMethod: 'N/A', // Templates don't have payment method
+          status: 'completed', // For templates, mark as completed
+          itemsList: purchaseOrderData.items.map(item => ({
+            name: item.description,
+            quantity: item.quantity,
+            unit: item.unit,
+            unitPrice: item.unitPrice,
+            total: item.total
+          })),
+          subtotal: purchaseOrderData.subtotal,
+          tax: purchaseOrderData.tax,
+          discount: purchaseOrderData.discount,
+          shipping: purchaseOrderData.shipping,
+          paymentTerms: purchaseOrderData.paymentTerms,
+          deliveryInstructions: purchaseOrderData.deliveryInstructions,
+          notes: purchaseOrderData.notes,
+          authorizedByName: purchaseOrderData.authorizedByName,
+          authorizedBySignature: purchaseOrderData.authorizedBySignature,
+          authorizationDate: purchaseOrderData.authorizationDate
+        };
+        
+        // Save to localStorage
+        const savedPurchaseOrders = JSON.parse(localStorage.getItem('savedPurchaseOrders') || '[]');
+        savedPurchaseOrders.push(purchaseOrderToSave);
+        localStorage.setItem('savedPurchaseOrders', JSON.stringify(savedPurchaseOrders));
+        
+        // Update state
+        setSavedPurchaseOrders(savedPurchaseOrders);
+        
+        // Show the purchase order options dialog after saving
+        setShowPurchaseOrderOptions(true);
+        
+        // Don't reset here - let the user choose an option first
+        
+        // Trigger storage event to notify other components
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'savedPurchaseOrders',
+          newValue: JSON.stringify(savedPurchaseOrders)
+        }));
+        
+        alert(`Purchase Order ${purchaseOrderData.poNumber} saved successfully!`);
+      } catch (error) {
+        console.error('Error saving purchase order:', error);
+        alert('Error saving purchase order. Please try again.');
       }
     } else {
       // For other templates, just log the save action
@@ -3345,6 +3487,148 @@ Thank you for your business!`,
     `;
   };
   
+  // Function to generate clean purchase order HTML for printing
+  const generateCleanPurchaseOrderHTML = (): string => {
+    return `
+      <div class="po-container" style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+        <style>
+          body { margin: 0; padding: 20px; }
+          .po-container { border: 1px solid #ccc; }
+          .text-center { text-align: center; }
+          .border-b-2 { border-bottom: 2px solid #000; }
+          .pb-2 { padding-bottom: 0.5rem; }
+          .font-bold { font-weight: bold; }
+          .text-2xl { font-size: 1.5rem; }
+          .text-sm { font-size: 0.875rem; }
+          .mb-1 { margin-bottom: 0.25rem; }
+          .mb-2 { margin-bottom: 0.5rem; }
+          .mt-4 { margin-top: 1rem; }
+          .mt-8 { margin-top: 2rem; }
+          .pt-4 { padding-top: 1rem; }
+          .border-t { border-top: 1px solid #ccc; }
+          .grid { display: grid; }
+          .gap-8 { gap: 2rem; }
+          .gap-4 { gap: 1rem; }
+          .grid-cols-1 { grid-template-columns: 1fr; }
+          .grid-cols-2 { grid-template-columns: 1fr 1fr; }
+          .grid-cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+          .border { border: 1px solid #e5e7eb; }
+          .p-3 { padding: 0.75rem; }
+          .rounded { border-radius: 0.25rem; }
+          .font-medium { font-weight: 500; }
+        </style>
+        <div class="text-center border-b-2 pb-2">
+          <h2 class="text-2xl font-bold">PURCHASE ORDER</h2>
+          <p class="text-sm">PO #: ${purchaseOrderData.poNumber || 'PO_NUMBER'}</p>
+          <p class="text-sm">Date: ${purchaseOrderData.date || new Date().toLocaleDateString()}</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+          <div>
+            <div class="font-bold mb-1">BUSINESS INFORMATION:</div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Name:</span> ${purchaseOrderData.businessName}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Address:</span> ${purchaseOrderData.businessAddress}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Phone:</span> ${purchaseOrderData.businessPhone}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Email:</span> ${purchaseOrderData.businessEmail}
+            </div>
+          </div>
+          
+          <div>
+            <div class="font-bold mb-1">SUPPLIER INFORMATION:</div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Name:</span> ${purchaseOrderData.supplierName}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Address:</span> ${purchaseOrderData.supplierAddress}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Phone:</span> ${purchaseOrderData.supplierPhone}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Email:</span> ${purchaseOrderData.supplierEmail}
+            </div>
+          </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+          <div>
+            <div class="font-bold mb-1">DELIVERY DETAILS:</div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Expected Delivery:</span> ${purchaseOrderData.expectedDelivery || 'N/A'}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Delivery Instructions:</span> ${purchaseOrderData.deliveryInstructions}
+            </div>
+          </div>
+          
+          <div>
+            <div class="font-bold mb-1">PAYMENT TERMS:</div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Payment Terms:</span> ${purchaseOrderData.paymentTerms}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Authorized By:</span> ${purchaseOrderData.authorizedByName}
+            </div>
+            <div class="text-sm mb-1">
+              <span class="font-medium">Authorization Date:</span> ${purchaseOrderData.authorizationDate || 'N/A'}
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <div class="font-bold mb-2">ITEMS ORDERED:</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #f3f4f6;">
+                <th style="border: 1px solid #e5e7eb; padding: 6px; text-align: left;">Description</th>
+                <th style="border: 1px solid #e5e7eb; padding: 6px; text-align: right;">Quantity</th>
+                <th style="border: 1px solid #e5e7eb; padding: 6px; text-align: right;">Unit</th>
+                <th style="border: 1px solid #e5e7eb; padding: 6px; text-align: right;">Unit Price</th>
+                <th style="border: 1px solid #e5e7eb; padding: 6px; text-align: right;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(purchaseOrderData.items || []).map(item => `
+                <tr>
+                  <td style="border: 1px solid #e5e7eb; padding: 6px;">${item.description || ''}</td>
+                  <td style="border: 1px solid #e5e7eb; padding: 6px; text-align: right;">${item.quantity || 0}</td>
+                  <td style="border: 1px solid #e5e7eb; padding: 6px; text-align: right;">${item.unit || ''}</td>
+                  <td style="border: 1px solid #e5e7eb; padding: 6px; text-align: right;">${formatCurrency(item.unitPrice || 0)}</td>
+                  <td style="border: 1px solid #e5e7eb; padding: 6px; text-align: right;">${formatCurrency(item.total || 0)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="mt-4">
+          <div class="font-bold mb-1">NOTES:</div>
+          <div class="text-sm">${purchaseOrderData.notes || 'N/A'}</div>
+        </div>
+        
+        <div class="mt-8 pt-4 border-t">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <div class="font-bold mb-1">AUTHORIZED SIGNATURE:</div>
+              <div class="text-sm">${purchaseOrderData.authorizedBySignature || 'N/A'}</div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold mb-1">TOTAL AMOUNT:</div>
+              <div class="text-xl font-bold">${formatCurrency(purchaseOrderData.total || 0)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  };
+  
   // Function to download customer settlement as PDF
   const downloadCustomerSettlementAsPDF = () => {
     // Show a loading message to the user
@@ -4315,7 +4599,7 @@ Thank you for your business!`,
   };
 
   // Handle purchase order data changes
-  const handlePurchaseOrderChange = (field: keyof PurchaseOrderData, value: string | number) => {
+  const handlePurchaseOrderChange = (field: keyof PurchaseOrderData | 'requestedBy' | 'approvedBy', value: string | number) => {
     setPurchaseOrderData(prev => ({
       ...prev,
       [field]: value
@@ -4483,6 +4767,13 @@ Thank you for your business!`,
     setShowGRNOptions(false);
     // Reset form after closing dialog
     resetGRNData();
+  };
+  
+  // Close purchase order options dialog
+  const closePurchaseOrderOptionsDialog = () => {
+    setShowPurchaseOrderOptions(false);
+    // Reset form after closing dialog
+    resetPurchaseOrderData();
   };
   
   // Function to generate clean invoice HTML for printing
@@ -6295,18 +6586,38 @@ Thank you for your business!`,
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                           <div>
                             <div className="font-bold mb-1">ORDER #</div>
-                            <div className="text-sm font-bold mb-4">{purchaseOrderData.poNumber}</div>
+                            <Input
+                              value={purchaseOrderData.poNumber}
+                              onChange={(e) => handlePurchaseOrderChange("poNumber", e.target.value)}
+                              className="text-sm font-bold mb-4 p-1 h-8"
+                            />
                             
                             <div className="font-bold mb-1">FROM:</div>
-                            <div className="text-sm mb-1">{purchaseOrderData.businessName}</div>
-                            <div className="text-sm mb-1">{purchaseOrderData.businessAddress}</div>
+                            <Input
+                              value={purchaseOrderData.businessName}
+                              onChange={(e) => handlePurchaseOrderChange("businessName", e.target.value)}
+                              className="text-sm mb-1 p-1 h-8"
+                            />
+                            <Input
+                              value={purchaseOrderData.businessAddress}
+                              onChange={(e) => handlePurchaseOrderChange("businessAddress", e.target.value)}
+                              className="text-sm mb-1 p-1 h-8"
+                            />
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <span>Phone:</span>
-                              <span>{purchaseOrderData.businessPhone}</span>
+                              <Input
+                                value={purchaseOrderData.businessPhone}
+                                onChange={(e) => handlePurchaseOrderChange("businessPhone", e.target.value)}
+                                className="text-sm p-1 h-8 w-40 inline-block"
+                              />
                             </div>
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <span>Contact:</span>
-                              <span>{purchaseOrderData.businessEmail}</span>
+                              <Input
+                                value={purchaseOrderData.businessEmail}
+                                onChange={(e) => handlePurchaseOrderChange("businessEmail", e.target.value)}
+                                className="text-sm p-1 h-8 w-40 inline-block"
+                              />
                             </div>
                           </div>
                           
@@ -6314,15 +6625,31 @@ Thank you for your business!`,
                             <div className="h-8 mb-4"></div>
                             
                             <div className="font-bold mb-1">TO (Supplier):</div>
-                            <div className="text-sm mb-1">{purchaseOrderData.supplierName}</div>
-                            <div className="text-sm mb-1">{purchaseOrderData.supplierAddress}</div>
+                            <Input
+                              value={purchaseOrderData.supplierName}
+                              onChange={(e) => handlePurchaseOrderChange("supplierName", e.target.value)}
+                              className="text-sm mb-1 p-1 h-8"
+                            />
+                            <Input
+                              value={purchaseOrderData.supplierAddress}
+                              onChange={(e) => handlePurchaseOrderChange("supplierAddress", e.target.value)}
+                              className="text-sm mb-1 p-1 h-8"
+                            />
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <span>Phone:</span>
-                              <span>{purchaseOrderData.supplierPhone}</span>
+                              <Input
+                                value={purchaseOrderData.supplierPhone}
+                                onChange={(e) => handlePurchaseOrderChange("supplierPhone", e.target.value)}
+                                className="text-sm p-1 h-8 w-40 inline-block"
+                              />
                             </div>
                             <div className="flex items-center gap-2 text-sm mt-1">
                               <span>Contact:</span>
-                              <span>{purchaseOrderData.supplierEmail}</span>
+                              <Input
+                                value={purchaseOrderData.supplierEmail}
+                                onChange={(e) => handlePurchaseOrderChange("supplierEmail", e.target.value)}
+                                className="text-sm p-1 h-8 w-40 inline-block"
+                              />
                             </div>
                           </div>
                         </div>
@@ -6331,19 +6658,39 @@ Thank you for your business!`,
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           <div>
                             <div className="text-sm font-medium">DATE</div>
-                            <div className="text-sm">{purchaseOrderData.date}</div>
+                            <Input
+                              type="date"
+                              value={purchaseOrderData.date}
+                              onChange={(e) => handlePurchaseOrderChange("date", e.target.value)}
+                              className="text-sm p-1 h-8"
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-medium">REQUIRED BY</div>
-                            <div className="text-sm">{purchaseOrderData.expectedDelivery || "_________"}</div>
+                            <Input
+                              value={purchaseOrderData.expectedDelivery}
+                              onChange={(e) => handlePurchaseOrderChange("expectedDelivery", e.target.value)}
+                              className="text-sm p-1 h-8"
+                              placeholder="Expected delivery date"
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-medium">PAYMENT TERMS</div>
-                            <div className="text-sm">{purchaseOrderData.paymentTerms}</div>
+                            <Input
+                              value={purchaseOrderData.paymentTerms}
+                              onChange={(e) => handlePurchaseOrderChange("paymentTerms", e.target.value)}
+                              className="text-sm p-1 h-8"
+                              placeholder="Net 30, etc."
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-medium">SHIP VIA</div>
-                            <div className="text-sm">{purchaseOrderData.deliveryInstructions}</div>
+                            <Input
+                              value={purchaseOrderData.deliveryInstructions}
+                              onChange={(e) => handlePurchaseOrderChange("deliveryInstructions", e.target.value)}
+                              className="text-sm p-1 h-8"
+                              placeholder="Shipping method"
+                            />
                           </div>
                         </div>
                         
@@ -6360,6 +6707,7 @@ Thank you for your business!`,
                                   <th className="border border-gray-300 p-2 text-left">Unit</th>
                                   <th className="border border-gray-300 p-2 text-left">Unit Price</th>
                                   <th className="border border-gray-300 p-2 text-left">Total</th>
+                                  <th className="border border-gray-300 p-2 text-left">Actions</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -6369,19 +6717,58 @@ Thank you for your business!`,
                                       ITM-{String(index + 1).padStart(3, '0')}
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.description}
+                                      <Input
+                                        value={item.description}
+                                        onChange={(e) => handlePurchaseOrderItemChange(item.id, 'description', e.target.value)}
+                                        className="p-1 h-8 text-sm"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.quantity}
+                                      <Input
+                                        type="number"
+                                        value={item.quantity}
+                                        onChange={(e) => {
+                                          const newQuantity = parseFloat(e.target.value);
+                                          handlePurchaseOrderItemChange(item.id, 'quantity', newQuantity);
+                                          // Update total when quantity changes
+                                          handlePurchaseOrderItemChange(item.id, 'total', newQuantity * item.unitPrice);
+                                        }}
+                                        className="p-1 h-8 text-sm"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {item.unit}
+                                      <Input
+                                        value={item.unit}
+                                        onChange={(e) => handlePurchaseOrderItemChange(item.id, 'unit', e.target.value)}
+                                        className="p-1 h-8 text-sm"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
-                                      {formatCurrency(item.unitPrice)}
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={item.unitPrice}
+                                        onChange={(e) => {
+                                          const newPrice = parseFloat(e.target.value);
+                                          handlePurchaseOrderItemChange(item.id, 'unitPrice', newPrice);
+                                          // Update total when unit price changes
+                                          handlePurchaseOrderItemChange(item.id, 'total', item.quantity * newPrice);
+                                        }}
+                                        className="p-1 h-8 text-sm"
+                                      />
                                     </td>
                                     <td className="border border-gray-300 p-2">
                                       {formatCurrency(item.total)}
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Button
+                                        onClick={() => handleRemovePurchaseOrderItem(item.id)}
+                                        variant="outline"
+                                        size="sm"
+                                        className="p-1 h-8"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
                                     </td>
                                   </tr>
                                 ))}
@@ -6411,7 +6798,13 @@ Thank you for your business!`,
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">SHIPPING</span>
-                            <span>{formatCurrency(purchaseOrderData.shipping)}</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={purchaseOrderData.shipping}
+                              onChange={(e) => handlePurchaseOrderChange("shipping", parseFloat(e.target.value) || 0)}
+                              className="w-24 inline-block p-1 h-8 text-right text-sm"
+                            />
                           </div>
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">TOTAL</span>
@@ -6423,16 +6816,22 @@ Thank you for your business!`,
                         <div className="space-y-4">
                           <div>
                             <div className="font-bold mb-2">SPECIAL INSTRUCTIONS:</div>
-                            <div className="text-sm min-h-[40px]">
-                              {purchaseOrderData.notes}
-                            </div>
+                            <Textarea
+                              value={purchaseOrderData.notes}
+                              onChange={(e) => handlePurchaseOrderChange("notes", e.target.value)}
+                              className="min-h-[80px] text-sm"
+                              placeholder="Special instructions or requirements..."
+                            />
                           </div>
                           
                           <div>
                             <div className="font-bold mb-2">APPROVAL:</div>
-                            <div className="text-sm min-h-[40px]">
-                              {purchaseOrderData.authorizedBySignature}
-                            </div>
+                            <Textarea
+                              value={purchaseOrderData.authorizedBySignature}
+                              onChange={(e) => handlePurchaseOrderChange("authorizedBySignature", e.target.value)}
+                              className="min-h-[80px] text-sm"
+                              placeholder="Authorization details..."
+                            />
                           </div>
                         </div>
                         
@@ -6441,8 +6840,13 @@ Thank you for your business!`,
                           <div>
                             <div className="font-bold mb-2">REQUESTED BY</div>
                             <div className="text-sm space-y-2">
-                              <div className="border-t border-black pt-1 mt-8">
-                                <div className="text-xs">Name & Title</div>
+                              <div className="pt-1 mt-8">
+                                <Input
+                                  value={purchaseOrderData.requestedBy || ""}
+                                  onChange={(e) => handlePurchaseOrderChange("requestedBy", e.target.value)}
+                                  className="text-xs p-1 h-8 border-b border-black rounded-none focus:ring-0 focus:border-black"
+                                  placeholder="Name & Title"
+                                />
                               </div>
                             </div>
                           </div>
@@ -6450,8 +6854,13 @@ Thank you for your business!`,
                           <div>
                             <div className="font-bold mb-2">APPROVED BY</div>
                             <div className="text-sm space-y-2">
-                              <div className="border-t border-black pt-1 mt-8">
-                                <div className="text-xs">Name & Title</div>
+                              <div className="pt-1 mt-8">
+                                <Input
+                                  value={purchaseOrderData.approvedBy || ""}
+                                  onChange={(e) => handlePurchaseOrderChange("approvedBy", e.target.value)}
+                                  className="text-xs p-1 h-8 border-b border-black rounded-none focus:ring-0 focus:border-black"
+                                  placeholder="Name & Title"
+                                />
                               </div>
                             </div>
                           </div>
@@ -6459,8 +6868,13 @@ Thank you for your business!`,
                           <div>
                             <div className="font-bold mb-2">DATE</div>
                             <div className="text-sm space-y-2">
-                              <div className="border-t border-black pt-1 mt-8">
-                                <div className="text-xs">&nbsp;</div>
+                              <div className="pt-1 mt-8">
+                                <Input
+                                  type="date"
+                                  value={purchaseOrderData.authorizationDate || ""}
+                                  onChange={(e) => handlePurchaseOrderChange("authorizationDate", e.target.value)}
+                                  className="text-xs p-1 h-8 border-b border-black rounded-none focus:ring-0 focus:border-black w-full"
+                                />
                               </div>
                             </div>
                           </div>
@@ -9505,6 +9919,251 @@ Enter choice (1-3):`);
             <div className="mt-4 flex justify-end">
               <Button 
                 onClick={closeGRNOptionsDialog}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Purchase Order Options Dialog */}
+      {showPurchaseOrderOptions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-bold mb-4">Purchase Order Options</h3>
+            <p className="mb-4">Choose an action for your purchase order:</p>
+            
+            <div className="space-y-2">
+              <Button 
+                onClick={() => {
+                  // Print functionality for purchase order
+                  // Create a print-friendly version of the purchase order
+                  const purchaseOrderContent = generateCleanPurchaseOrderHTML();
+                  
+                  // Create a temporary window for printing
+                  const printWindow = window.open('', '_blank', 'width=800,height=600');
+                  if (printWindow) {
+                    printWindow.document.write(`
+                      <!DOCTYPE html>
+                      <html>
+                      <head>
+                        <title>Purchase Order</title>
+                        <style>
+                          body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                          .po-container { max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; }
+                          .text-center { text-align: center; }
+                          .border-b-2 { border-bottom: 2px solid #000; }
+                          .pb-2 { padding-bottom: 0.5rem; }
+                          .font-bold { font-weight: bold; }
+                          .text-2xl { font-size: 1.5rem; }
+                          .text-sm { font-size: 0.875rem; }
+                          .mb-1 { margin-bottom: 0.25rem; }
+                          .mb-2 { margin-bottom: 0.5rem; }
+                          .mt-4 { margin-top: 1rem; }
+                          .mt-8 { margin-top: 2rem; }
+                          .pt-4 { padding-top: 1rem; }
+                          .border-t { border-top: 1px solid #ccc; }
+                          .grid { display: grid; }
+                          .gap-8 { gap: 2rem; }
+                          .gap-4 { gap: 1rem; }
+                          .grid-cols-1 { grid-template-columns: 1fr; }
+                          .grid-cols-2 { grid-template-columns: 1fr 1fr; }
+                          .grid-cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+                          .border { border: 1px solid #e5e7eb; }
+                          .p-3 { padding: 0.75rem; }
+                          .rounded { border-radius: 0.25rem; }
+                          .font-medium { font-weight: 500; }
+                        </style>
+                      </head>
+                      <body>
+                        ${purchaseOrderContent}
+                      </body>
+                      </html>
+                    `);
+                    printWindow.document.close();
+                    
+                    // Wait a bit for content to render before printing
+                    setTimeout(() => {
+                      printWindow.focus();
+                      printWindow.print();
+                      printWindow.close();
+                    }, 500);
+                  } else {
+                    // Fallback: Alert user to allow popups
+                    alert('Please enable popups for this site to print the purchase order');
+                  }
+                  closePurchaseOrderOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                Print Purchase Order
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Download functionality for purchase order
+                  // Generate the purchase order as a PDF
+                  import('html2pdf.js').then((html2pdfModule) => {
+                    const purchaseOrderContent = generateCleanPurchaseOrderHTML();
+                    
+                    // Create a temporary container to hold the purchase order content
+                    const tempContainer = document.createElement('div');
+                    tempContainer.innerHTML = purchaseOrderContent;
+                    tempContainer.style.position = 'absolute';
+                    tempContainer.style.left = '-9999px';
+                    document.body.appendChild(tempContainer);
+                    
+                    // Configure PDF options
+                    const opt = {
+                      margin: 5,
+                      filename: `Purchase_Order_${purchaseOrderData.poNumber}.pdf`,
+                      image: { type: 'jpeg' as const, quality: 0.98 },
+                      html2canvas: { scale: 2, useCORS: true },
+                      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const }
+                    };
+                    
+                    // Generate PDF
+                    html2pdfModule.default(tempContainer, opt).then(() => {
+                      // Remove temporary container after PDF generation
+                      setTimeout(() => {
+                        document.body.removeChild(tempContainer);
+                      }, 1000);
+                    });
+                  });
+                  closePurchaseOrderOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download Purchase Order
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Share functionality for purchase order
+                  try {
+                    // Generate a shareable URL for the purchase order
+                    const shareData = {
+                      title: `Purchase Order ${purchaseOrderData.poNumber}`,
+                      text: `Purchase Order #${purchaseOrderData.poNumber} for supplier ${purchaseOrderData.supplierName}`,
+                      url: window.location.href // In a real app, this would be a specific purchase order URL
+                    };
+                    
+                    // Use the Web Share API if available
+                    if (navigator.share) {
+                      navigator.share(shareData)
+                        .then(() => console.log('Shared successfully'))
+                        .catch((error) => {
+                          console.log('Sharing failed:', error);
+                          // Fallback to copying to clipboard
+                          try {
+                            // Try to copy the URL to clipboard
+                            navigator.clipboard.writeText(shareData.url || window.location.href)
+                              .then(() => {
+                                alert('Purchase order link copied to clipboard! You can now share it with others.');
+                              })
+                              .catch(err => {
+                                console.error('Failed to copy: ', err);
+                                // If clipboard fails, show the URL to the user
+                                const url = prompt('Copy this link to share the purchase order:', shareData.url || window.location.href);
+                              });
+                          } catch (err) {
+                            console.error('Fallback sharing failed: ', err);
+                            alert('Could not share the purchase order. Please copy the URL manually.');
+                          }
+                        });
+                    } else {
+                      // Fallback to copying to clipboard
+                      try {
+                        // Try to copy the URL to clipboard
+                        navigator.clipboard.writeText(shareData.url || window.location.href)
+                          .then(() => {
+                            alert('Purchase order link copied to clipboard! You can now share it with others.');
+                          })
+                          .catch(err => {
+                            console.error('Failed to copy: ', err);
+                            // If clipboard fails, show the URL to the user
+                            const url = prompt('Copy this link to share the purchase order:', shareData.url || window.location.href);
+                          });
+                      } catch (err) {
+                        console.error('Fallback sharing failed: ', err);
+                        alert('Could not share the purchase order. Please copy the URL manually.');
+                      }
+                    }
+                  } catch (error) {
+                    console.error('Error sharing purchase order:', error);
+                    alert('Error sharing purchase order. Please try again.');
+                  }
+                  closePurchaseOrderOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <Share className="h-4 w-4 mr-2" />
+                Share Purchase Order
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Export functionality for purchase order
+                  // Allow user to export in different formats
+                  const exportOptions = [
+                    { name: 'PDF', action: () => {
+                        // Placeholder for PDF export
+                        alert('PDF export functionality coming soon');
+                      } 
+                    },
+                    { name: 'CSV', action: () => {
+                        // Placeholder for CSV export
+                        alert('CSV export functionality coming soon');
+                      } 
+                    },
+                    { name: 'JSON', action: () => {
+                        // Placeholder for JSON export
+                        alert('JSON export functionality coming soon');
+                      } 
+                    },
+                  ];
+                  
+                  // Show export options to user
+                  const exportChoice = prompt(`Choose export format:
+1. PDF
+2. CSV
+3. JSON
+Enter choice (1-3):`);
+                  
+                  closePurchaseOrderOptionsDialog();
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Export Purchase Order
+              </Button>
+              
+              <Button 
+                onClick={() => {
+                  // Reset functionality for purchase order
+                  resetPurchaseOrderData();
+                  closePurchaseOrderOptionsDialog();
+                  alert('Purchase order form has been reset to default layout');
+                }}
+                className="w-full flex items-center justify-start"
+                variant="outline"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reset Form
+              </Button>
+            </div>
+            
+            <div className="mt-4 flex justify-end">
+              <Button 
+                onClick={closePurchaseOrderOptionsDialog}
                 variant="outline"
               >
                 Cancel
