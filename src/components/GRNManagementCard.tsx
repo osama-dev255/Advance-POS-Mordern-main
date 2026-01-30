@@ -138,6 +138,40 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
     setIsViewDialogOpen(true);
   };
 
+  // Function to distribute receiving costs among items based on quantity
+  const distributeReceivingCosts = (items: GRNItem[], receivingCosts: Array<{ description: string; amount: number }>) => {
+    // Calculate total quantity of all items
+    const totalQuantity = items.reduce((sum, item) => sum + item.delivered, 0);
+    
+    if (totalQuantity === 0) {
+      return items.map(item => ({
+        ...item,
+        receivingCostPerUnit: 0,
+        totalWithReceivingCost: item.unitCost ? item.unitCost * item.delivered : 0
+      }));
+    }
+    
+    // Calculate total receiving costs
+    const totalReceivingCosts = receivingCosts.reduce((sum, cost) => sum + Number(cost.amount || 0), 0);
+    
+    // Calculate cost per unit based on total quantity
+    const costPerUnit = totalReceivingCosts / totalQuantity;
+    
+    // Update each item with receiving cost per unit and total cost with receiving costs
+    return items.map(item => {
+      const receivingCostPerUnit = costPerUnit;
+      const unitCostWithReceiving = (item.unitCost || 0) + receivingCostPerUnit;
+      const totalWithReceivingCost = unitCostWithReceiving * item.delivered;
+      
+      return {
+        ...item,
+        receivingCostPerUnit,
+        totalWithReceivingCost,
+        unitCost: unitCostWithReceiving
+      };
+    });
+  };
+
   // Parse GRN data for display
   const parseGRNData = (grn: SavedGRN): GRNData => {
     try {
@@ -342,7 +376,7 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
 
         {/* GRN View Dialog */}
         <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>GRN Details</DialogTitle>
             </DialogHeader>
@@ -384,27 +418,37 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
                       {/* Items Table */}
                       <div>
                         <h3 className="font-semibold mb-3">Received Items</h3>
-                        <div className="rounded-md border">
+                        <div className="rounded-md border overflow-x-auto">
                           <Table>
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Description</TableHead>
                                 <TableHead className="text-right">Ordered</TableHead>
-                                <TableHead className="text-right">Delivered</TableHead>
+                                <TableHead className="text-right">Received</TableHead>
                                 <TableHead>Unit</TableHead>
-                                <TableHead className="text-right">Unit Cost</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="text-right">Original Unit Cost</TableHead>
+                                <TableHead className="text-right">Receiving Cost Per Unit</TableHead>
+                                <TableHead className="text-right">New Unit Cost</TableHead>
+                                <TableHead className="text-right">Total Cost with Receiving</TableHead>
+                                <TableHead className="text-right">Batch #</TableHead>
+                                <TableHead className="text-right">Expiry</TableHead>
+                                <TableHead>Remarks</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {grnData.items.map((item) => (
+                              {distributeReceivingCosts(grnData.items, grnData.receivingCosts).map((item) => (
                                 <TableRow key={item.id || item.description}>
                                   <TableCell className="font-medium">{item.description}</TableCell>
                                   <TableCell className="text-right">{item.quantity}</TableCell>
                                   <TableCell className="text-right">{item.delivered}</TableCell>
                                   <TableCell>{item.unit}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(item.unitCost - (item.receivingCostPerUnit || 0))}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(item.receivingCostPerUnit || 0)}</TableCell>
                                   <TableCell className="text-right">{formatCurrency(item.unitCost)}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(item.quantity * item.unitCost)}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(item.totalWithReceivingCost || (item.delivered * (item.unitCost || 0)))}</TableCell>
+                                  <TableCell className="text-right">{item.batchNumber || ''}</TableCell>
+                                  <TableCell className="text-right">{item.expiryDate || ''}</TableCell>
+                                  <TableCell>{item.remarks || ''}</TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
