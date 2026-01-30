@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Truck, Package, Calendar, CheckCircle, AlertTriangle, Plus, Edit, Trash2, Eye } from "lucide-react";
+import { Truck, Package, Calendar, CheckCircle, AlertTriangle, Plus, Edit, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/currency";
-import { getSavedGRNs, deleteGRN, SavedGRN } from "@/utils/grnUtils";
+import { getSavedGRNs, SavedGRN } from "@/utils/grnUtils";
 
 interface GRNManagementCardProps {
   searchTerm: string;
@@ -115,23 +115,7 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
     }
   };
 
-  const handleDeleteGRN = async (id: string) => {
-    try {
-      await deleteGRN(id);
-      setGrns(grns.filter(g => g.id !== id));
-      toast({
-        title: "Success",
-        description: "GRN deleted successfully"
-      });
-    } catch (error) {
-      console.error("Error deleting GRN:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete GRN",
-        variant: "destructive"
-      });
-    }
-  };
+
 
   const openViewDialog = (grn: SavedGRN) => {
     setSelectedGRN(grn);
@@ -325,7 +309,7 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
                   <TableHead>PO Number</TableHead>
                   <TableHead>Items Count</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>View</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -349,22 +333,13 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openViewDialog(grn)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm"
-                            onClick={() => handleDeleteGRN(grn.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => openViewDialog(grn)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
