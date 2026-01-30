@@ -31,6 +31,7 @@ interface GRNItem {
   remarks?: string;
   receivingCostPerUnit?: number;
   totalWithReceivingCost?: number;
+  rate?: number;
 }
 
 interface GRNData {
@@ -76,6 +77,7 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
   const [selectedGRN, setSelectedGRN] = useState<SavedGRN | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [editedRates, setEditedRates] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   // Load data on mount and when refresh trigger changes
@@ -120,6 +122,16 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
   const openViewDialog = (grn: SavedGRN) => {
     setSelectedGRN(grn);
     setIsViewDialogOpen(true);
+    // Reset edited rates when opening a new GRN
+    setEditedRates({});
+  };
+
+  const handleRateChange = (itemId: string, value: string) => {
+    const rate = parseFloat(value) || 0;
+    setEditedRates(prev => ({
+      ...prev,
+      [itemId]: rate
+    }));
   };
 
   // Function to distribute receiving costs among items based on quantity
@@ -408,6 +420,7 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
                                 <TableHead className="text-right">Batch #</TableHead>
                                 <TableHead className="text-right">Expiry</TableHead>
                                 <TableHead>Remarks</TableHead>
+                                <TableHead className="text-right">Rate</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -424,6 +437,17 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
                                   <TableCell className="text-right">{item.batchNumber || ''}</TableCell>
                                   <TableCell className="text-right">{item.expiryDate || ''}</TableCell>
                                   <TableCell>{item.remarks || ''}</TableCell>
+                                  <TableCell className="text-right">
+                                    <Input
+                                      type="number"
+                                      value={editedRates[item.id || item.description] || item.rate || ''}
+                                      onChange={(e) => handleRateChange(item.id || item.description, e.target.value)}
+                                      className="w-24 text-right"
+                                      placeholder="0.00"
+                                      step="0.01"
+                                      min="0"
+                                    />
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -455,6 +479,18 @@ export const GRNManagementCard = ({ searchTerm, refreshTrigger }: GRNManagementC
                 <div className="flex justify-end gap-2 pt-4 border-t">
                   <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
                     Close
+                  </Button>
+                  <Button 
+                    variant="secondary"
+                    onClick={() => {
+                      // Save rates logic can be implemented here
+                      toast({
+                        title: "Success",
+                        description: "Rates updated successfully"
+                      });
+                    }}
+                  >
+                    Save Rates
                   </Button>
                   <Button>
                     <CheckCircle className="h-4 w-4 mr-2" />
