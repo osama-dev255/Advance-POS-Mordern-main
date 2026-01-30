@@ -7,6 +7,7 @@ import { SavedGRNsCard } from "./SavedGRNsCard";
 import { getSavedGRNs, deleteGRN, SavedGRN as SavedGRNType } from "@/utils/grnUtils";
 import { PrintUtils } from "@/utils/printUtils";
 import { ExportUtils } from "@/utils/exportUtils";
+import { formatCurrency } from "@/lib/currency";
 
 interface SavedGRNsSectionProps {
   onBack: () => void;
@@ -19,6 +20,40 @@ export const SavedGRNsSection = ({ onBack, onLogout, username }: SavedGRNsSectio
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedGRN, setSelectedGRN] = useState<SavedGRNType | null>(null);
+
+  // Function to distribute receiving costs among items based on quantity
+  const distributeReceivingCosts = (items: any[], receivingCosts: Array<{ description: string; amount: number }>) => {
+    // Calculate total quantity of all items
+    const totalQuantity = items.reduce((sum, item) => sum + item.delivered, 0);
+    
+    if (totalQuantity === 0) {
+      return items.map(item => ({
+        ...item,
+        receivingCostPerUnit: 0,
+        totalWithReceivingCost: item.unitCost ? item.unitCost * item.delivered : 0
+      }));
+    }
+    
+    // Calculate total receiving costs
+    const totalReceivingCosts = receivingCosts.reduce((sum, cost) => sum + Number(cost.amount || 0), 0);
+    
+    // Calculate cost per unit based on total quantity
+    const costPerUnit = totalReceivingCosts / totalQuantity;
+    
+    // Update each item with receiving cost per unit and total cost with receiving costs
+    return items.map(item => {
+      const receivingCostPerUnit = costPerUnit;
+      const unitCostWithReceiving = (item.unitCost || 0) + receivingCostPerUnit;
+      const totalWithReceivingCost = unitCostWithReceiving * item.delivered;
+      
+      return {
+        ...item,
+        receivingCostPerUnit,
+        totalWithReceivingCost,
+        unitCost: unitCostWithReceiving
+      };
+    });
+  };
 
   // Load saved GRNs from database
   useEffect(() => {
@@ -76,7 +111,7 @@ export const SavedGRNsSection = ({ onBack, onLogout, username }: SavedGRNsSectio
       date: grn.data.date,
       items: grn.data.items.map(item => ({
         name: item.description,
-        quantity: item.receivedQuantity,
+        quantity: item.delivered,
         unit: item.unit,
         price: item.unitCost || 0,
         total: item.totalWithReceivingCost || 0
@@ -109,7 +144,7 @@ export const SavedGRNsSection = ({ onBack, onLogout, username }: SavedGRNsSectio
       date: grn.data.date,
       items: grn.data.items.map(item => ({
         name: item.description,
-        quantity: item.receivedQuantity,
+        quantity: item.delivered,
         unit: item.unit,
         price: item.unitCost || 0,
         total: item.totalWithReceivingCost || 0
@@ -171,19 +206,29 @@ export const SavedGRNsSection = ({ onBack, onLogout, username }: SavedGRNsSectio
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ordered</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Received</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit Cost</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Unit Cost</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receiving Cost Per Unit</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Unit Cost</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Cost with Receiving</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch #</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Expiry</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {selectedGRN.data.items.map((item, index) => (
+                      {distributeReceivingCosts(selectedGRN.data.items, selectedGRN.data.receivingCosts).map((item, index) => (
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap">{item.description}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{item.orderedQuantity}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{item.receivedQuantity}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{item.quantity}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{item.delivered}</td>
                           <td className="px-6 py-4 whitespace-nowrap">{item.unit}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{item.unitCost?.toFixed(2)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">{(item.totalWithReceivingCost || 0).toFixed(2)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(item.unitCost - (item.receivingCostPerUnit || 0))}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(item.receivingCostPerUnit || 0)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(item.unitCost)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{formatCurrency(item.totalWithReceivingCost || (item.delivered * (item.unitCost || 0)))}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{item.batchNumber || ''}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{item.expiryDate || ''}</td>
+                          <td className="px-6 py-4 whitespace-nowrap">{item.remarks || ''}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -280,7 +325,7 @@ export const SavedGRNsSection = ({ onBack, onLogout, username }: SavedGRNsSectio
                       items: grn.data.items.length,
                       total: grn.data.items.reduce((sum, item) => sum + (item.totalWithReceivingCost || 0), 0),
                       poNumber: grn.data.poNumber,
-                      status: grn.data.status || "received"
+                      status: grn.data.status === "pending" || grn.data.status === "cancelled" ? "received" : (grn.data.status || "received")
                     }}
                     onViewDetails={() => handleViewGRN(grn)}
                     onPrintGRN={() => handlePrintGRN(grn)}
