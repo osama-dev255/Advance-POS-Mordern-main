@@ -1245,6 +1245,9 @@ Thank you for your business!`,
     
     console.log('GRN Data:', grnData);
     
+    // Calculate total amount from items
+    const totalAmount = grnData.items.reduce((sum, item) => sum + Number(item.totalWithReceivingCost || 0), 0);
+    
     // Convert Templates GRN data to grnUtils format
     const convertedGRNData: any = {
       grnNumber: grnData.grnNumber,
@@ -1298,6 +1301,13 @@ Thank you for your business!`,
     const newGRN: UtilsSavedGRN = {
       id: Date.now().toString(),
       name: `GRN-${grnData.grnNumber}`, // Use the actual GRN number for display
+      grnNumber: grnData.grnNumber,
+      date: grnData.date,
+      supplier: grnData.supplierName,
+      items: grnData.items.length,
+      total: totalAmount, // This is the key fix - include the calculated total
+      poNumber: grnData.poNumber,
+      status: grnData.status === 'received' || grnData.status === 'checked' || grnData.status === 'approved' ? 'completed' : (grnData.status || 'completed'),
       data: convertedGRNData as any,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
