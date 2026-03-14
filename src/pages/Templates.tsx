@@ -4943,6 +4943,10 @@ Thank you for your business!`,
               <td style="padding: 5px; text-align: right;">${formatCurrency(calculateInvoiceTotals().subtotal)}</td>
             </tr>
             <tr>
+              <td style="padding: 5px;"><strong>Total Quantity:</strong></td>
+              <td style="padding: 5px; text-align: right;">${calculateInvoiceTotals().totalQuantity}</td>
+            </tr>
+            <tr>
               <td style="padding: 5px;"><strong>Discount:</strong></td>
               <td style="padding: 5px; text-align: right;">${formatCurrency(invoiceData.discount)}</td>
             </tr>
@@ -5382,6 +5386,7 @@ Thank you for your business!`,
           ]),
           [],
           ['SUBTOTAL', `${formatCurrency(calculateInvoiceTotals().subtotal)}`],
+          ['TOTAL QUANTITY', `${calculateInvoiceTotals().totalQuantity}`],
           ['DISCOUNT', `${formatCurrency(invoiceData.discount)}`],
           ['TAX', `${formatCurrency(invoiceData.tax)}`],
           ['TOTAL', `${formatCurrency(calculateInvoiceTotals().total)}`],
@@ -5485,6 +5490,7 @@ Thank you for your business!`,
       
       csvContent += '\n';
       csvContent += `Subtotal,${formatCurrency(calculateInvoiceTotals().subtotal)}\n`;
+      csvContent += `Total Quantity,${calculateInvoiceTotals().totalQuantity}\n`;
       csvContent += `Discount,${formatCurrency(invoiceData.discount)}\n`;
       csvContent += `Tax,${formatCurrency(invoiceData.tax)}\n`;
       csvContent += `Total,${formatCurrency(calculateInvoiceTotals().total)}\n`;
@@ -5616,6 +5622,7 @@ Thank you for your business!`,
     });
     
     invoiceText += `\n*SUBTOTAL:* ${formatCurrency(calculateInvoiceTotals().subtotal)}\n`;
+    invoiceText += `*TOTAL QUANTITY:* ${calculateInvoiceTotals().totalQuantity}\n`;
     invoiceText += `*DISCOUNT:* ${formatCurrency(invoiceData.discount)}\n`;
     invoiceText += `*TAX:* ${formatCurrency(invoiceData.tax)}\n`;
     invoiceText += `*TOTAL:* ${formatCurrency(calculateInvoiceTotals().total)}\n`;
@@ -5662,6 +5669,7 @@ Thank you for your business!`,
     });
     
     invoiceText += `\nSUBTOTAL: ${formatCurrency(calculateInvoiceTotals().subtotal)}\n`;
+    invoiceText += `TOTAL QUANTITY: ${calculateInvoiceTotals().totalQuantity}\n`;
     invoiceText += `DISCOUNT: ${formatCurrency(invoiceData.discount)}\n`;
     invoiceText += `TAX: ${formatCurrency(invoiceData.tax)}\n`;
     invoiceText += `TOTAL: ${formatCurrency(calculateInvoiceTotals().total)}\n`;
@@ -5711,6 +5719,7 @@ Thank you for your business!`,
     });
     
     invoiceText += `\nSUBTOTAL: TSH ${calculateInvoiceTotals().subtotal.toFixed(2)}\n`;
+    invoiceText += `TOTAL QUANTITY: ${calculateInvoiceTotals().totalQuantity}\n`;
     invoiceText += `DISCOUNT: TSH ${invoiceData.discount.toFixed(2)}\n`;
     invoiceText += `TAX: TSH ${invoiceData.tax.toFixed(2)}\n`;
     invoiceText += `TOTAL: TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
@@ -5765,6 +5774,7 @@ Thank you for your business!`,
         ]),
         [],
         ['SUBTOTAL', `${formatCurrency(calculateInvoiceTotals().subtotal)}`],
+        ['TOTAL QUANTITY', `${calculateInvoiceTotals().totalQuantity}`],
         ['DISCOUNT', `${formatCurrency(invoiceData.discount)}`],
         ['TAX', `${formatCurrency(invoiceData.tax)}`],
         ['TOTAL', `${formatCurrency(calculateInvoiceTotals().total)}`],
@@ -5818,10 +5828,11 @@ Thank you for your business!`,
   // Calculate invoice totals
   const calculateInvoiceTotals = () => {
     const subtotal = invoiceData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const totalQuantity = invoiceData.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
     const total = subtotal + Number(invoiceData.tax || 0) - Number(invoiceData.discount || 0);
     const amountDue = total - Number(invoiceData.amountPaid || 0) + Number(invoiceData.creditBroughtForward || 0);
     
-    return { subtotal, total, amountDue };
+    return { subtotal, totalQuantity, total, amountDue };
   };
   
   // Update totals when invoice data changes
@@ -7178,6 +7189,10 @@ Thank you for your business!`,
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Subtotal:</span>
                             <span>{formatCurrency(calculateInvoiceTotals().subtotal)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="font-bold">Total Quantity:</span>
+                            <span>{calculateInvoiceTotals().totalQuantity}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Discount:</span>
