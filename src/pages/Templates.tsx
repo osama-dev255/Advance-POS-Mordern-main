@@ -245,6 +245,9 @@ interface InvoiceData {
   paymentOptions: string;
   checkPayableMessage: string;
   timestamp: string;
+  preparedBy: string;
+  approvedBy: string;
+  checkedBy: string;
 }
 
 interface ExpenseVoucherItem {
@@ -1828,7 +1831,10 @@ Thank you for your business!`,
     notes: "Thank you for your business!.",
     paymentOptions: "Cash , Bank Transfer, Check, or Credit Card",
     checkPayableMessage: "Please make checks payable to KILANGO GROUP LTD",
-    timestamp: new Date().toLocaleString()
+    timestamp: new Date().toLocaleString(),
+    preparedBy: "",
+    approvedBy: "",
+    checkedBy: ""
   };
   
   const [invoiceData, setInvoiceData] = useState<InvoiceData>(initialInvoiceData);
@@ -4982,6 +4988,27 @@ Thank you for your business!`,
         <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #d1d5db;">
           <div>${invoiceData.checkPayableMessage}</div>
         </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px solid #d1d5db;">
+          <div style="text-align: center; flex: 1;">
+            <div style="font-weight: bold; margin-bottom: 10px;">PREPARED BY</div>
+            <div style="border-top: 1px solid #000; padding-top: 5px; margin-top: 30px;">
+              <div style="font-size: 12px;">${invoiceData.preparedBy || '_________________'}</div>
+            </div>
+          </div>
+          <div style="text-align: center; flex: 1;">
+            <div style="font-weight: bold; margin-bottom: 10px;">CHECKED BY</div>
+            <div style="border-top: 1px solid #000; padding-top: 5px; margin-top: 30px;">
+              <div style="font-size: 12px;">${invoiceData.checkedBy || '_________________'}</div>
+            </div>
+          </div>
+          <div style="text-align: center; flex: 1;">
+            <div style="font-weight: bold; margin-bottom: 10px;">APPROVED BY</div>
+            <div style="border-top: 1px solid #000; padding-top: 5px; margin-top: 30px;">
+              <div style="font-size: 12px;">${invoiceData.approvedBy || '_________________'}</div>
+            </div>
+          </div>
+        </div>
       </div>
     `;
     
@@ -5399,7 +5426,11 @@ Thank you for your business!`,
           ['Amount Paid', `${formatCurrency(invoiceData.amountPaid)}`],
           ['Shipping', `${formatCurrency(invoiceData.shipping)}`],
           ['Credit Brought Forward from previous', `${formatCurrency(invoiceData.creditBroughtForward)}`],
-          ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`]
+          ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`],
+          [],
+          ['PREPARED BY', invoiceData.preparedBy || ''],
+          ['CHECKED BY', invoiceData.checkedBy || ''],
+          ['APPROVED BY', invoiceData.approvedBy || '']
         ];
         
         const ws = XLSXModule.utils.aoa_to_sheet(wsData);
@@ -5505,6 +5536,10 @@ Thank you for your business!`,
       csvContent += `Shipping,${formatCurrency(invoiceData.shipping)}\n`;
       csvContent += `Credit Brought Forward from previous,${formatCurrency(invoiceData.creditBroughtForward)}\n`;
       csvContent += `Amount Due,${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
+      csvContent += `\n`;
+      csvContent += `Prepared By,${invoiceData.preparedBy || ''}\n`;
+      csvContent += `Checked By,${invoiceData.checkedBy || ''}\n`;
+      csvContent += `Approved By,${invoiceData.approvedBy || ''}\n`;
       
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement('a');
@@ -5639,6 +5674,17 @@ Thank you for your business!`,
     invoiceText += `*Credit Brought Forward from previous:* ${formatCurrency(invoiceData.creditBroughtForward)}\n`;
     invoiceText += `*AMOUNT DUE:* ${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
     
+    // Add signature fields
+    if (invoiceData.preparedBy) {
+      invoiceText += `\n*Prepared By:* ${invoiceData.preparedBy}\n`;
+    }
+    if (invoiceData.checkedBy) {
+      invoiceText += `*Checked By:* ${invoiceData.checkedBy}\n`;
+    }
+    if (invoiceData.approvedBy) {
+      invoiceText += `*Approved By:* ${invoiceData.approvedBy}\n`;
+    }
+    
     // Format phone number for WhatsApp (remove all non-digit characters except the plus sign)
     if (invoiceData.clientPhone) {
       const formattedPhoneNumber = invoiceData.clientPhone.replace(/[^+\d]/g, '');
@@ -5686,6 +5732,17 @@ Thank you for your business!`,
     invoiceText += `Shipping: ${formatCurrency(invoiceData.shipping)}\n`;
     invoiceText += `Credit Brought Forward from previous: ${formatCurrency(invoiceData.creditBroughtForward)}\n`;
     invoiceText += `AMOUNT DUE: ${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
+    
+    // Add signature fields
+    if (invoiceData.preparedBy) {
+      invoiceText += `\nPrepared By: ${invoiceData.preparedBy}\n`;
+    }
+    if (invoiceData.checkedBy) {
+      invoiceText += `Checked By: ${invoiceData.checkedBy}\n`;
+    }
+    if (invoiceData.approvedBy) {
+      invoiceText += `Approved By: ${invoiceData.approvedBy}\n`;
+    }
     
     // Create mailto link
     const subject = `Invoice ${invoiceData.invoiceNumber}`;
@@ -5735,6 +5792,17 @@ Thank you for your business!`,
     invoiceText += `SHIPPING: TSH ${invoiceData.shipping.toFixed(2)}\n`;
     invoiceText += `TOTAL: TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
     invoiceText += `AMOUNT DUE: TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}\n`;
+    
+    // Add signature fields
+    if (invoiceData.preparedBy) {
+      invoiceText += `\nPrepared By: ${invoiceData.preparedBy}\n`;
+    }
+    if (invoiceData.checkedBy) {
+      invoiceText += `Checked By: ${invoiceData.checkedBy}\n`;
+    }
+    if (invoiceData.approvedBy) {
+      invoiceText += `Approved By: ${invoiceData.approvedBy}\n`;
+    }
     
     navigator.clipboard.writeText(invoiceText)
       .then(() => {
@@ -5792,7 +5860,11 @@ Thank you for your business!`,
         ['Amount Paid', `${formatCurrency(invoiceData.amountPaid)}`],
         ['Shipping', `${formatCurrency(invoiceData.shipping)}`],
         ['Credit Brought Forward from previous', `${formatCurrency(invoiceData.creditBroughtForward)}`],
-        ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`]
+        ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`],
+        [],
+        ['PREPARED BY', invoiceData.preparedBy || ''],
+        ['CHECKED BY', invoiceData.checkedBy || ''],
+        ['APPROVED BY', invoiceData.approvedBy || '']
       ];
       
       const ws = XLSXModule.utils.aoa_to_sheet(wsData);
@@ -7278,6 +7350,51 @@ Thank you for your business!`,
                               onChange={(e) => handleInvoiceChange('checkPayableMessage', e.target.value)}
                               className="text-center"
                             />
+                          </div>
+                        </div>
+                        
+                        {/* Signature Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                          <div>
+                            <div className="font-bold mb-2">PREPARED BY</div>
+                            <div className="text-sm space-y-2">
+                              <div className="border-t border-black pt-1 mt-8">
+                                <Input
+                                  value={invoiceData.preparedBy}
+                                  onChange={(e) => handleInvoiceChange('preparedBy', e.target.value)}
+                                  className="text-xs p-1 h-8 border-0 border-b border-black rounded-none focus:ring-0 focus:border-black w-full"
+                                  placeholder="Name & Signature"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="font-bold mb-2">CHECKED BY</div>
+                            <div className="text-sm space-y-2">
+                              <div className="border-t border-black pt-1 mt-8">
+                                <Input
+                                  value={invoiceData.checkedBy}
+                                  onChange={(e) => handleInvoiceChange('checkedBy', e.target.value)}
+                                  className="text-xs p-1 h-8 border-0 border-b border-black rounded-none focus:ring-0 focus:border-black w-full"
+                                  placeholder="Name & Signature"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="font-bold mb-2">APPROVED BY</div>
+                            <div className="text-sm space-y-2">
+                              <div className="border-t border-black pt-1 mt-8">
+                                <Input
+                                  value={invoiceData.approvedBy}
+                                  onChange={(e) => handleInvoiceChange('approvedBy', e.target.value)}
+                                  className="text-xs p-1 h-8 border-0 border-b border-black rounded-none focus:ring-0 focus:border-black w-full"
+                                  placeholder="Name & Signature"
+                                />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
