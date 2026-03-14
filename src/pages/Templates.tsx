@@ -1799,10 +1799,10 @@ Thank you for your business!`,
   
   // Initialize invoice data with current date and time-based invoice number
   const initialInvoiceData: InvoiceData = {
-    businessName: "Your Business Name",
-    businessAddress: "123 Business Street",
-    businessPhone: "(555) 123-4567",
-    businessEmail: "billing@yourbusiness.com",
+    businessName: "Kilango Group LTD",
+    businessAddress: "P.O.Box 64, Tanganyika Street, Muheza - Tanga",
+    businessPhone: "0717 058 266",
+    businessEmail: "kilangogroup1@gmail.com",
     clientName: "Client Company Name",
     clientAddress: "456 Client Avenue",
     clientCityState: "Client City, State 67890",
