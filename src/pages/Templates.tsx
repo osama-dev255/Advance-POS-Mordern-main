@@ -238,6 +238,7 @@ interface InvoiceData {
   discount: number;
   total: number;
   amountPaid: number;
+  shipping: number;
   creditBroughtForward: number;
   terms: string;
   notes: string;
@@ -1821,6 +1822,7 @@ Thank you for your business!`,
     discount: 0.00,
     total: 2395.84,
     amountPaid: 0.00,
+    shipping: 0.00,
     creditBroughtForward: 0.00,
     terms: "Net 30",
     notes: "Thank you for your business!.",
@@ -4963,6 +4965,10 @@ Thank you for your business!`,
               <td style="padding: 5px; text-align: right;">${formatCurrency(invoiceData.amountPaid)}</td>
             </tr>
             <tr>
+              <td style="padding: 5px;"><strong>Shipping:</strong></td>
+              <td style="padding: 5px; text-align: right;">${formatCurrency(invoiceData.shipping)}</td>
+            </tr>
+            <tr>
               <td style="padding: 5px;"><strong>Credit Brought Forward from previous:</strong></td>
               <td style="padding: 5px; text-align: right;">${formatCurrency(invoiceData.creditBroughtForward)}</td>
             </tr>
@@ -5391,6 +5397,7 @@ Thank you for your business!`,
           ['TAX', `${formatCurrency(invoiceData.tax)}`],
           ['TOTAL', `${formatCurrency(calculateInvoiceTotals().total)}`],
           ['Amount Paid', `${formatCurrency(invoiceData.amountPaid)}`],
+          ['Shipping', `${formatCurrency(invoiceData.shipping)}`],
           ['Credit Brought Forward from previous', `${formatCurrency(invoiceData.creditBroughtForward)}`],
           ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`]
         ];
@@ -5495,6 +5502,7 @@ Thank you for your business!`,
       csvContent += `Tax,${formatCurrency(invoiceData.tax)}\n`;
       csvContent += `Total,${formatCurrency(calculateInvoiceTotals().total)}\n`;
       csvContent += `Amount Paid,${formatCurrency(invoiceData.amountPaid)}\n`;
+      csvContent += `Shipping,${formatCurrency(invoiceData.shipping)}\n`;
       csvContent += `Credit Brought Forward from previous,${formatCurrency(invoiceData.creditBroughtForward)}\n`;
       csvContent += `Amount Due,${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
       
@@ -5627,6 +5635,7 @@ Thank you for your business!`,
     invoiceText += `*TAX:* ${formatCurrency(invoiceData.tax)}\n`;
     invoiceText += `*TOTAL:* ${formatCurrency(calculateInvoiceTotals().total)}\n`;
     invoiceText += `*Amount Paid:* ${formatCurrency(invoiceData.amountPaid)}\n`;
+    invoiceText += `*Shipping:* ${formatCurrency(invoiceData.shipping)}\n`;
     invoiceText += `*Credit Brought Forward from previous:* ${formatCurrency(invoiceData.creditBroughtForward)}\n`;
     invoiceText += `*AMOUNT DUE:* ${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
     
@@ -5674,6 +5683,7 @@ Thank you for your business!`,
     invoiceText += `TAX: ${formatCurrency(invoiceData.tax)}\n`;
     invoiceText += `TOTAL: ${formatCurrency(calculateInvoiceTotals().total)}\n`;
     invoiceText += `Amount Paid: ${formatCurrency(invoiceData.amountPaid)}\n`;
+    invoiceText += `Shipping: ${formatCurrency(invoiceData.shipping)}\n`;
     invoiceText += `Credit Brought Forward from previous: ${formatCurrency(invoiceData.creditBroughtForward)}\n`;
     invoiceText += `AMOUNT DUE: ${formatCurrency(calculateInvoiceTotals().amountDue)}\n`;
     
@@ -5722,6 +5732,7 @@ Thank you for your business!`,
     invoiceText += `TOTAL QUANTITY: ${calculateInvoiceTotals().totalQuantity}\n`;
     invoiceText += `DISCOUNT: TSH ${invoiceData.discount.toFixed(2)}\n`;
     invoiceText += `TAX: TSH ${invoiceData.tax.toFixed(2)}\n`;
+    invoiceText += `SHIPPING: TSH ${invoiceData.shipping.toFixed(2)}\n`;
     invoiceText += `TOTAL: TSH ${calculateInvoiceTotals().total.toFixed(2)}\n`;
     invoiceText += `AMOUNT DUE: TSH ${calculateInvoiceTotals().amountDue.toFixed(2)}\n`;
     
@@ -5779,6 +5790,7 @@ Thank you for your business!`,
         ['TAX', `${formatCurrency(invoiceData.tax)}`],
         ['TOTAL', `${formatCurrency(calculateInvoiceTotals().total)}`],
         ['Amount Paid', `${formatCurrency(invoiceData.amountPaid)}`],
+        ['Shipping', `${formatCurrency(invoiceData.shipping)}`],
         ['Credit Brought Forward from previous', `${formatCurrency(invoiceData.creditBroughtForward)}`],
         ['AMOUNT DUE', `${formatCurrency(calculateInvoiceTotals().amountDue)}`]
       ];
@@ -5829,7 +5841,7 @@ Thank you for your business!`,
   const calculateInvoiceTotals = () => {
     const subtotal = invoiceData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const totalQuantity = invoiceData.items.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
-    const total = subtotal + Number(invoiceData.tax || 0) - Number(invoiceData.discount || 0);
+    const total = subtotal + Number(invoiceData.tax || 0) + Number(invoiceData.shipping || 0) - Number(invoiceData.discount || 0);
     const amountDue = total - Number(invoiceData.amountPaid || 0) + Number(invoiceData.creditBroughtForward || 0);
     
     return { subtotal, totalQuantity, total, amountDue };
@@ -5839,7 +5851,7 @@ Thank you for your business!`,
   useEffect(() => {
     // Recalculate totals when items, tax, or discount change
     const newSubtotal = invoiceData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const newTotal = newSubtotal + Number(invoiceData.tax || 0) - Number(invoiceData.discount || 0);
+    const newTotal = newSubtotal + Number(invoiceData.tax || 0) + Number(invoiceData.shipping || 0) - Number(invoiceData.discount || 0);
     const newAmountDue = newTotal - Number(invoiceData.amountPaid || 0) + Number(invoiceData.creditBroughtForward || 0);
     
     setInvoiceData(prev => ({
@@ -5848,7 +5860,7 @@ Thank you for your business!`,
       total: newTotal,
       amountDue: newAmountDue
     }));
-  }, [invoiceData.items, invoiceData.tax, invoiceData.discount, invoiceData.amountPaid, invoiceData.creditBroughtForward]);
+  }, [invoiceData.items, invoiceData.tax, invoiceData.discount, invoiceData.shipping, invoiceData.amountPaid, invoiceData.creditBroughtForward]);
   
   // Handle expense voucher data changes
   const handleExpenseVoucherChange = (field: keyof ExpenseVoucherData, value: string | number) => {
@@ -7229,6 +7241,16 @@ Thank you for your business!`,
                               step="0.01"
                               value={invoiceData.amountPaid}
                               onChange={(e) => handleInvoiceChange('amountPaid', parseFloat(e.target.value) || 0)}
+                              className="w-24 inline-block p-1 h-8 text-right"
+                            />
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="font-bold">Shipping:</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={invoiceData.shipping}
+                              onChange={(e) => handleInvoiceChange('shipping', parseFloat(e.target.value) || 0)}
                               className="w-24 inline-block p-1 h-8 text-right"
                             />
                           </div>
