@@ -169,10 +169,19 @@ export const SavedCustomerSettlementsSection = ({ onBack, onLogout, username }: 
 
   const handleEditChange = (field: keyof SavedCustomerSettlementData, value: string | number) => {
     if (editedSettlement) {
-      setEditedSettlement({
+      const updatedSettlement = {
         ...editedSettlement,
         [field]: value
-      });
+      };
+      
+      // Auto-calculate new balance when previous balance or amount paid changes
+      if (field === 'previousBalance' || field === 'amountPaid') {
+        const previousBalance = field === 'previousBalance' ? (value as number) : (updatedSettlement.previousBalance || 0);
+        const amountPaid = field === 'amountPaid' ? (value as number) : (updatedSettlement.amountPaid || 0);
+        updatedSettlement.newBalance = previousBalance - amountPaid;
+      }
+      
+      setEditedSettlement(updatedSettlement);
     }
   };
 
@@ -276,7 +285,8 @@ export const SavedCustomerSettlementsSection = ({ onBack, onLogout, username }: 
                         <Input 
                           type="number"
                           value={editedSettlement.newBalance || 0} 
-                          onChange={(e) => handleEditChange('newBalance', parseFloat(e.target.value) || 0)} 
+                          readOnly
+                          className="bg-gray-50"
                         />
                       </div>
                       <div>
