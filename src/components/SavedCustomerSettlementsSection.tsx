@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, HandCoins, Download, Printer } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Search, HandCoins, Download, Printer, Edit, Save, X } from "lucide-react";
 import { SavedCustomerSettlementsCard } from "./SavedCustomerSettlementsCard";
 import { 
   getSavedSettlements, 
   deleteCustomerSettlement, 
+  updateCustomerSettlement,
   CustomerSettlementData as SavedCustomerSettlementData 
 } from "@/utils/customerSettlementUtils";
 import { PrintUtils } from "@/utils/printUtils";
@@ -23,6 +25,8 @@ export const SavedCustomerSettlementsSection = ({ onBack, onLogout, username }: 
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [viewingSettlement, setViewingSettlement] = useState<SavedCustomerSettlementData | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedSettlement, setEditedSettlement] = useState<SavedCustomerSettlementData | null>(null);
 
   // Load saved settlements from database
   useEffect(() => {
@@ -130,6 +134,46 @@ export const SavedCustomerSettlementsSection = ({ onBack, onLogout, username }: 
 
   const handleViewSettlement = (settlement: SavedCustomerSettlementData) => {
     setViewingSettlement(settlement);
+    setIsEditing(false);
+    setEditedSettlement(null);
+  };
+
+  const handleEditSettlement = () => {
+    if (viewingSettlement) {
+      setEditedSettlement({ ...viewingSettlement });
+      setIsEditing(true);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditedSettlement(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (editedSettlement) {
+      try {
+        await updateCustomerSettlement(editedSettlement);
+        setViewingSettlement(editedSettlement);
+        setIsEditing(false);
+        setEditedSettlement(null);
+        // Refresh the settlements list
+        const savedSettlements = await getSavedSettlements();
+        setSettlements(savedSettlements);
+      } catch (error) {
+        console.error("Error updating settlement:", error);
+        alert("Failed to update settlement. Please try again.");
+      }
+    }
+  };
+
+  const handleEditChange = (field: keyof SavedCustomerSettlementData, value: string | number) => {
+    if (editedSettlement) {
+      setEditedSettlement({
+        ...editedSettlement,
+        [field]: value
+      });
+    }
   };
 
   return (
@@ -140,61 +184,210 @@ export const SavedCustomerSettlementsSection = ({ onBack, onLogout, username }: 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold">Settlement Details</h2>
-              <Button variant="outline" onClick={() => setViewingSettlement(null)}>
+              <Button variant="outline" onClick={() => { setViewingSettlement(null); setIsEditing(false); setEditedSettlement(null); }}>
                 Back to Settlements
               </Button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Settlement Information</h3>
-                <div className="space-y-2">
-                  <p><span className="font-medium">Reference:</span> {viewingSettlement.referenceNumber}</p>
-                  <p><span className="font-medium">Date:</span> {viewingSettlement.date}</p>
-                  <p><span className="font-medium">Time:</span> {viewingSettlement.time}</p>
-                  <p><span className="font-medium">Status:</span> {viewingSettlement.status || 'completed'}</p>
+            {isEditing && editedSettlement ? (
+              // Edit Mode
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Settlement Information</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Reference</Label>
+                        <Input value={editedSettlement.referenceNumber} readOnly className="bg-gray-50" />
+                      </div>
+                      <div>
+                        <Label>Date</Label>
+                        <Input 
+                          type="date"
+                          value={editedSettlement.date || ''} 
+                          onChange={(e) => handleEditChange('date', e.target.value)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>Time</Label>
+                        <Input 
+                          value={editedSettlement.time || ''} 
+                          onChange={(e) => handleEditChange('time', e.target.value)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>Status</Label>
+                        <Input 
+                          value={editedSettlement.status || 'completed'} 
+                          onChange={(e) => handleEditChange('status', e.target.value)} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Customer Information</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Name</Label>
+                        <Input 
+                          value={editedSettlement.customerName || ''} 
+                          onChange={(e) => handleEditChange('customerName', e.target.value)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>Phone</Label>
+                        <Input 
+                          value={editedSettlement.customerPhone || ''} 
+                          onChange={(e) => handleEditChange('customerPhone', e.target.value)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input 
+                          value={editedSettlement.customerEmail || ''} 
+                          onChange={(e) => handleEditChange('customerEmail', e.target.value)} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Financial Details</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Previous Balance</Label>
+                        <Input 
+                          type="number"
+                          value={editedSettlement.previousBalance || 0} 
+                          onChange={(e) => handleEditChange('previousBalance', parseFloat(e.target.value) || 0)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>Amount Paid</Label>
+                        <Input 
+                          type="number"
+                          value={editedSettlement.amountPaid || 0} 
+                          onChange={(e) => handleEditChange('amountPaid', parseFloat(e.target.value) || 0)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>New Balance</Label>
+                        <Input 
+                          type="number"
+                          value={editedSettlement.newBalance || 0} 
+                          onChange={(e) => handleEditChange('newBalance', parseFloat(e.target.value) || 0)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>Total Settlement</Label>
+                        <Input 
+                          type="number"
+                          value={editedSettlement.settlementAmount || 0} 
+                          onChange={(e) => handleEditChange('settlementAmount', parseFloat(e.target.value) || 0)} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Transaction Details</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Payment Method</Label>
+                        <Input 
+                          value={editedSettlement.paymentMethod || ''} 
+                          onChange={(e) => handleEditChange('paymentMethod', e.target.value)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>Processed By</Label>
+                        <Input 
+                          value={editedSettlement.cashierName || ''} 
+                          onChange={(e) => handleEditChange('cashierName', e.target.value)} 
+                        />
+                      </div>
+                      <div>
+                        <Label>Notes</Label>
+                        <Input 
+                          value={editedSettlement.notes || ''} 
+                          onChange={(e) => handleEditChange('notes', e.target.value)} 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 mt-6">
+                  <Button variant="outline" onClick={handleCancelEdit}>
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button onClick={handleSaveEdit}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Changes
+                  </Button>
                 </div>
               </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Customer Information</h3>
-                <div className="space-y-2">
-                  <p><span className="font-medium">Name:</span> {viewingSettlement.customerName}</p>
-                  <p><span className="font-medium">Phone:</span> {viewingSettlement.customerPhone}</p>
-                  <p><span className="font-medium">Email:</span> {viewingSettlement.customerEmail}</p>
+            ) : (
+              // View Mode
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Settlement Information</h3>
+                    <div className="space-y-2">
+                      <p><span className="font-medium">Reference:</span> {viewingSettlement.referenceNumber}</p>
+                      <p><span className="font-medium">Date:</span> {viewingSettlement.date}</p>
+                      <p><span className="font-medium">Time:</span> {viewingSettlement.time}</p>
+                      <p><span className="font-medium">Status:</span> {viewingSettlement.status || 'completed'}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Customer Information</h3>
+                    <div className="space-y-2">
+                      <p><span className="font-medium">Name:</span> {viewingSettlement.customerName}</p>
+                      <p><span className="font-medium">Phone:</span> {viewingSettlement.customerPhone}</p>
+                      <p><span className="font-medium">Email:</span> {viewingSettlement.customerEmail}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Financial Details</h3>
+                    <div className="space-y-2">
+                      <p><span className="font-medium">Previous Balance:</span> {viewingSettlement.previousBalance?.toLocaleString()}</p>
+                      <p><span className="font-medium">Amount Paid:</span> {viewingSettlement.amountPaid?.toLocaleString()}</p>
+                      <p><span className="font-medium">New Balance:</span> {viewingSettlement.newBalance?.toLocaleString()}</p>
+                      <p><span className="font-medium">Total Settlement:</span> {viewingSettlement.settlementAmount?.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Transaction Details</h3>
+                    <div className="space-y-2">
+                      <p><span className="font-medium">Payment Method:</span> {viewingSettlement.paymentMethod}</p>
+                      <p><span className="font-medium">Processed By:</span> {viewingSettlement.cashierName}</p>
+                      <p><span className="font-medium">Notes:</span> {viewingSettlement.notes || 'None'}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Financial Details</h3>
-                <div className="space-y-2">
-                  <p><span className="font-medium">Previous Balance:</span> {viewingSettlement.previousBalance?.toLocaleString()}</p>
-                  <p><span className="font-medium">Amount Paid:</span> {viewingSettlement.amountPaid?.toLocaleString()}</p>
-                  <p><span className="font-medium">New Balance:</span> {viewingSettlement.newBalance?.toLocaleString()}</p>
-                  <p><span className="font-medium">Total Settlement:</span> {viewingSettlement.settlementAmount?.toLocaleString()}</p>
+                
+                <div className="flex gap-2 mt-6">
+                  <Button variant="outline" onClick={handleEditSettlement}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </Button>
+                  <Button variant="outline" onClick={() => handlePrintSettlement(viewingSettlement)}>
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print
+                  </Button>
+                  <Button variant="outline" onClick={() => handleDownloadSettlement(viewingSettlement)}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download
+                  </Button>
                 </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Transaction Details</h3>
-                <div className="space-y-2">
-                  <p><span className="font-medium">Payment Method:</span> {viewingSettlement.paymentMethod}</p>
-                  <p><span className="font-medium">Processed By:</span> {viewingSettlement.cashierName}</p>
-                  <p><span className="font-medium">Notes:</span> {viewingSettlement.notes || 'None'}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex gap-2 mt-6">
-              <Button variant="outline" onClick={() => handlePrintSettlement(viewingSettlement)}>
-                <Printer className="h-4 w-4 mr-2" />
-                Print
-              </Button>
-              <Button variant="outline" onClick={() => handleDownloadSettlement(viewingSettlement)}>
-                <Download className="h-4 w-4 mr-2" />
-                Download
-              </Button>
-            </div>
+              </>
+            )}
           </div>
         </div>
       ) : (
