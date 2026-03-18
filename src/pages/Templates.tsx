@@ -3956,8 +3956,9 @@ Thank you for your business!`,
     const totalPackages = deliveryNoteData.items.reduce((count, item) => 
       item.unit && item.delivered ? count + 1 : count, 0
     );
+    const totalAmount = deliveryNoteData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
     
-    return { totalItems, totalQuantity, totalPackages };
+    return { totalItems, totalQuantity, totalPackages, totalAmount };
   };
 
   // Save delivery note to localStorage
@@ -4081,6 +4082,7 @@ Thank you for your business!`,
         const totalPackages = viewedData.items.reduce((count, item) => 
           item.unit && item.delivered ? count + 1 : count, 0
         );
+        const totalAmount = viewedData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
         
         const printContent = `
           <!DOCTYPE html>
@@ -4228,7 +4230,7 @@ Thank you for your business!`,
               <table style="margin-left: auto; width: 300px; font-size: 14px;">
                 <tr>
                   <td style="padding: 5px;"><strong>Total:</strong></td>
-                  <td style="padding: 5px; text-align: right;">${viewedData.total || 0}</td>
+                  <td style="padding: 5px; text-align: right;">${totalAmount}</td>
                 </tr>
                 <tr>
                   <td style="padding: 5px;"><strong>Amount Paid:</strong></td>
@@ -4240,7 +4242,7 @@ Thank you for your business!`,
                 </tr>
                 <tr style="border-top: 2px solid #000; padding-top: 5px;">
                   <td style="padding: 5px;"><strong>AMOUNT DUE:</strong></td>
-                  <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>${(viewedData.total || 0) - (viewedData.amountPaid || 0) + (viewedData.creditBroughtForward || 0)}</strong></td>
+                  <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>${totalAmount - (viewedData.amountPaid || 0) + (viewedData.creditBroughtForward || 0)}</strong></td>
                 </tr>
               </table>
             </div>
@@ -4458,7 +4460,7 @@ Thank you for your business!`,
             <table style="margin-left: auto; width: 300px; font-size: 14px;">
               <tr>
                 <td style="padding: 5px;"><strong>Total:</strong></td>
-                <td style="padding: 5px; text-align: right;">${formatCurrency(deliveryNoteData.total)}</td>
+                <td style="padding: 5px; text-align: right;">${formatCurrency(totals.totalAmount)}</td>
               </tr>
               <tr>
                 <td style="padding: 5px;"><strong>Amount Paid:</strong></td>
@@ -4470,7 +4472,7 @@ Thank you for your business!`,
               </tr>
               <tr style="border-top: 2px solid #000; padding-top: 5px;">
                 <td style="padding: 5px;"><strong>AMOUNT DUE:</strong></td>
-                <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>${formatCurrency(deliveryNoteData.total - deliveryNoteData.amountPaid + deliveryNoteData.creditBroughtForward)}</strong></td>
+                <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>${formatCurrency(totals.totalAmount - deliveryNoteData.amountPaid + deliveryNoteData.creditBroughtForward)}</strong></td>
               </tr>
             </table>
           </div>
@@ -4682,7 +4684,7 @@ Thank you for your business!`,
           <table style="margin-left: auto; width: 300px; font-size: 14px;">
             <tr>
               <td style="padding: 5px;"><strong>Total:</strong></td>
-              <td style="padding: 5px; text-align: right;">${formatCurrency(deliveryNoteData.total)}</td>
+              <td style="padding: 5px; text-align: right;">${formatCurrency(totals.totalAmount)}</td>
             </tr>
             <tr>
               <td style="padding: 5px;"><strong>Amount Paid:</strong></td>
@@ -4694,7 +4696,7 @@ Thank you for your business!`,
             </tr>
             <tr style="border-top: 2px solid #000; padding-top: 5px;">
               <td style="padding: 5px;"><strong>AMOUNT DUE:</strong></td>
-              <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>${formatCurrency(deliveryNoteData.total - deliveryNoteData.amountPaid + deliveryNoteData.creditBroughtForward)}</strong></td>
+              <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>${formatCurrency(totals.totalAmount - deliveryNoteData.amountPaid + deliveryNoteData.creditBroughtForward)}</strong></td>
             </tr>
           </table>
         </div>
@@ -9251,13 +9253,7 @@ Thank you for your business!`,
                         <div className="grid grid-cols-1 gap-2 max-w-xs ml-auto">
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Total:</span>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={deliveryNoteData.total}
-                              onChange={(e) => handleDeliveryNoteChange('total', parseFloat(e.target.value) || 0)}
-                              className="w-24 inline-block p-1 h-8 text-right"
-                            />
+                            <span className="font-bold">{formatCurrency(totals.totalAmount)}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Amount Paid:</span>
@@ -9281,7 +9277,7 @@ Thank you for your business!`,
                           </div>
                           <div className="flex justify-between text-sm pt-2 border-t border-gray-300">
                             <span className="font-bold">AMOUNT DUE:</span>
-                            <span className="font-bold text-red-600">{formatCurrency(deliveryNoteData.total - deliveryNoteData.amountPaid + deliveryNoteData.creditBroughtForward)}</span>
+                            <span className="font-bold text-red-600">{formatCurrency(totals.totalAmount - deliveryNoteData.amountPaid + deliveryNoteData.creditBroughtForward)}</span>
                           </div>
                         </div>
                         
