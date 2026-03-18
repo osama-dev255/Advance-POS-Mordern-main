@@ -5199,8 +5199,8 @@ Thank you for your business!`,
             <div><strong>Delivery Date:</strong> ${deliveryNoteData.deliveryDate || 'N/A'}</div>
             <div><strong>Vehicle:</strong> ${deliveryNoteData.vehicle || 'N/A'}</div>
             <div><strong>Driver:</strong> ${deliveryNoteData.driver || 'N/A'}</div>
-            <div><strong>Total Items:</strong> ${deliveryNoteData.totalItems}</div>
-            <div><strong>Total Quantity:</strong> ${deliveryNoteData.totalQuantity}</div>
+            <div><strong>Total Items:</strong> ${deliveryNoteData.items.length}</div>
+            <div><strong>Total Quantity:</strong> ${deliveryNoteData.items.reduce((sum, item) => sum + Number(item.delivered || 0), 0)}</div>
           </div>
           
           <div class="items-table">
