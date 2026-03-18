@@ -5211,6 +5211,8 @@ Thank you for your business!`,
                   <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Description</th>
                   <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Quantity</th>
                   <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Unit</th>
+                  <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Rate</th>
+                  <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Amount</th>
                   <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Delivered</th>
                   <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Remarks</th>
                 </tr>
@@ -5222,11 +5224,34 @@ Thank you for your business!`,
                     <td style="border: 1px solid #ccc; padding: 8px;">${item.description}</td>
                     <td style="border: 1px solid #ccc; padding: 8px;">${item.quantity}</td>
                     <td style="border: 1px solid #ccc; padding: 8px;">${item.unit}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.rate || 0}</td>
+                    <td style="border: 1px solid #ccc; padding: 8px;">${item.amount || 0}</td>
                     <td style="border: 1px solid #ccc; padding: 8px;">${item.delivered}</td>
                     <td style="border: 1px solid #ccc; padding: 8px;">${item.remarks}</td>
                   </tr>
                 `).join('')}
               </tbody>
+            </table>
+          </div>
+          
+          <div style="margin-top: 20px; text-align: right;">
+            <table style="margin-left: auto; width: 300px; font-size: 14px;">
+              <tr>
+                <td style="padding: 5px;"><strong>Total:</strong></td>
+                <td style="padding: 5px; text-align: right;">${deliveryNoteData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px;"><strong>Amount Paid:</strong></td>
+                <td style="padding: 5px; text-align: right;">${deliveryNoteData.amountPaid || 0}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px;"><strong>Credit Brought Forward from previous:</strong></td>
+                <td style="padding: 5px; text-align: right;">${deliveryNoteData.creditBroughtForward || 0}</td>
+              </tr>
+              <tr style="border-top: 2px solid #000; padding-top: 5px;">
+                <td style="padding: 5px;"><strong>AMOUNT DUE:</strong></td>
+                <td style="padding: 5px; text-align: right; color: #dc2626;"><strong>${deliveryNoteData.items.reduce((sum, item) => sum + Number(item.amount || 0), 0) - (deliveryNoteData.amountPaid || 0) + (deliveryNoteData.creditBroughtForward || 0)}</strong></td>
+              </tr>
             </table>
           </div>
           
