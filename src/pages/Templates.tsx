@@ -4226,10 +4226,6 @@ Thank you for your business!`,
                   <td style="padding: 5px; text-align: right;">${viewedData.total || 0}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 5px;"><strong>Total Quantity:</strong></td>
-                  <td style="padding: 5px; text-align: right;">${totalQuantity}</td>
-                </tr>
-                <tr>
                   <td style="padding: 5px;"><strong>Amount Paid:</strong></td>
                   <td style="padding: 5px; text-align: right;">${viewedData.amountPaid || 0}</td>
                 </tr>
@@ -4460,10 +4456,6 @@ Thank you for your business!`,
                 <td style="padding: 5px; text-align: right;">${formatCurrency(deliveryNoteData.total)}</td>
               </tr>
               <tr>
-                <td style="padding: 5px;"><strong>Total Quantity:</strong></td>
-                <td style="padding: 5px; text-align: right;">${totals.totalQuantity}</td>
-              </tr>
-              <tr>
                 <td style="padding: 5px;"><strong>Amount Paid:</strong></td>
                 <td style="padding: 5px; text-align: right;">${formatCurrency(deliveryNoteData.amountPaid)}</td>
               </tr>
@@ -4686,10 +4678,6 @@ Thank you for your business!`,
             <tr>
               <td style="padding: 5px;"><strong>Total:</strong></td>
               <td style="padding: 5px; text-align: right;">${formatCurrency(deliveryNoteData.total)}</td>
-            </tr>
-            <tr>
-              <td style="padding: 5px;"><strong>Total Quantity:</strong></td>
-              <td style="padding: 5px; text-align: right;">${totals.totalQuantity}</td>
             </tr>
             <tr>
               <td style="padding: 5px;"><strong>Amount Paid:</strong></td>
@@ -9249,10 +9237,6 @@ Thank you for your business!`,
                               onChange={(e) => handleDeliveryNoteChange('total', parseFloat(e.target.value) || 0)}
                               className="w-24 inline-block p-1 h-8 text-right"
                             />
-                          </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="font-bold">Total Quantity:</span>
-                            <span>{totals.totalQuantity}</span>
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="font-bold">Amount Paid:</span>
