@@ -67,6 +67,8 @@ interface DeliveryNoteItem {
   description: string;
   quantity: number;
   unit: string;
+  rate: number;
+  amount: number;
   delivered: number;
   remarks: string;
 }
@@ -131,9 +133,9 @@ const initialDeliveryNoteData: DeliveryNoteData = {
   vehicle: "",
   driver: "",
   items: [
-    { id: "1", description: "Sample Product 1", quantity: 10, unit: "pcs", delivered: 10, remarks: "Good condition" },
-    { id: "2", description: "Sample Product 2", quantity: 5, unit: "boxes", delivered: 5, remarks: "Fragile" },
-    { id: "3", description: "Sample Product 3", quantity: 2, unit: "units", delivered: 2, remarks: "" }
+    { id: "1", description: "Sample Product 1", quantity: 10, unit: "pcs", rate: 100, amount: 1000, delivered: 10, remarks: "Good condition" },
+    { id: "2", description: "Sample Product 2", quantity: 5, unit: "boxes", rate: 200, amount: 1000, delivered: 5, remarks: "Fragile" },
+    { id: "3", description: "Sample Product 3", quantity: 2, unit: "units", rate: 150, amount: 300, delivered: 2, remarks: "" }
   ],
   deliveryNotes: "Please handle with care. Fragile items included.\nSignature required upon delivery.",
   totalItems: 3,
@@ -921,9 +923,9 @@ Thank you for your business!`,
     vehicle: "",
     driver: "",
     items: [
-      { id: "1", description: "Sample Product 1", quantity: 10, unit: "pcs", delivered: 10, remarks: "Good condition" },
-      { id: "2", description: "Sample Product 2", quantity: 5, unit: "boxes", delivered: 5, remarks: "Fragile" },
-      { id: "3", description: "Sample Product 3", quantity: 2, unit: "units", delivered: 2, remarks: "" }
+      { id: "1", description: "Sample Product 1", quantity: 10, unit: "pcs", rate: 100, amount: 1000, delivered: 10, remarks: "Good condition" },
+      { id: "2", description: "Sample Product 2", quantity: 5, unit: "boxes", rate: 200, amount: 1000, delivered: 5, remarks: "Fragile" },
+      { id: "3", description: "Sample Product 3", quantity: 2, unit: "units", rate: 150, amount: 300, delivered: 2, remarks: "" }
     ],
     deliveryNotes: ".\nSignature required upon delivery.",
     totalItems: 3,
@@ -3930,6 +3932,8 @@ Thank you for your business!`,
           description: "",
           quantity: 0,
           unit: "",
+          rate: 0,
+          amount: 0,
           delivered: 0,
           remarks: ""
         }
@@ -4184,6 +4188,8 @@ Thank you for your business!`,
                     <th>Item Description</th>
                     <th>Quantity</th>
                     <th>Unit</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
                     <th>Delivered</th>
                     <th>Remarks</th>
                   </tr>
@@ -4194,6 +4200,8 @@ Thank you for your business!`,
                       <td>${item.description}</td>
                       <td>${item.quantity}</td>
                       <td>${item.unit}</td>
+                      <td>${item.rate || 0}</td>
+                      <td>${item.amount || 0}</td>
                       <td>${item.delivered}</td>
                       <td>${item.remarks}</td>
                     </tr>
@@ -4408,6 +4416,8 @@ Thank you for your business!`,
                   <th>Item Description</th>
                   <th>Quantity</th>
                   <th>Unit</th>
+                  <th>Rate</th>
+                  <th>Amount</th>
                   <th>Delivered</th>
                   <th>Remarks</th>
                 </tr>
@@ -4418,6 +4428,8 @@ Thank you for your business!`,
                     <td>${item.description}</td>
                     <td>${item.quantity}</td>
                     <td>${item.unit}</td>
+                    <td>${item.rate || 0}</td>
+                    <td>${item.amount || 0}</td>
                     <td>${item.delivered}</td>
                     <td>${item.remarks}</td>
                   </tr>
@@ -4628,6 +4640,8 @@ Thank you for your business!`,
                 <th>Item Description</th>
                 <th>Quantity</th>
                 <th>Unit</th>
+                <th>Rate</th>
+                <th>Amount</th>
                 <th>Delivered</th>
                 <th>Remarks</th>
               </tr>
@@ -4638,6 +4652,8 @@ Thank you for your business!`,
                   <td>${item.description}</td>
                   <td>${item.quantity}</td>
                   <td>${item.unit}</td>
+                  <td>${item.rate || 0}</td>
+                  <td>${item.amount || 0}</td>
                   <td>${item.delivered}</td>
                   <td>${item.remarks}</td>
                 </tr>
@@ -9122,6 +9138,8 @@ Thank you for your business!`,
                                   <th className="border border-gray-300 p-2 text-left">Item Description</th>
                                   <th className="border border-gray-300 p-2 text-left">Quantity</th>
                                   <th className="border border-gray-300 p-2 text-left">Unit</th>
+                                  <th className="border border-gray-300 p-2 text-left">Rate</th>
+                                  <th className="border border-gray-300 p-2 text-left">Amount</th>
                                   <th className="border border-gray-300 p-2 text-left">Delivered</th>
                                   <th className="border border-gray-300 p-2 text-left">Remarks</th>
                                   <th className="border border-gray-300 p-2 text-left">Actions</th>
@@ -9149,6 +9167,24 @@ Thank you for your business!`,
                                       <Input
                                         value={item.unit}
                                         onChange={(e) => handleItemChange(item.id, 'unit', e.target.value)}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={item.rate}
+                                        onChange={(e) => handleItemChange(item.id, 'rate', parseFloat(e.target.value) || 0)}
+                                        className="p-1 h-8 text-sm w-full"
+                                      />
+                                    </td>
+                                    <td className="border border-gray-300 p-2">
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        value={item.amount}
+                                        onChange={(e) => handleItemChange(item.id, 'amount', parseFloat(e.target.value) || 0)}
                                         className="p-1 h-8 text-sm w-full"
                                       />
                                     </td>
