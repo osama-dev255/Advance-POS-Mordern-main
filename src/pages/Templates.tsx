@@ -4207,15 +4207,12 @@ Thank you for your business!`,
               <p>${viewedData.deliveryNotes}</p>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <span class="font-bold">Total Items:</span> ${totalItems}
               </div>
               <div>
                 <span class="font-bold">Total Quantity:</span> ${totalQuantity} units
-              </div>
-              <div>
-                <span class="font-bold">Total Packages:</span> ${totalPackages}
               </div>
             </div>
             
@@ -4443,10 +4440,6 @@ Thank you for your business!`,
               <p class="font-bold">Total Quantity:</p>
               <p>${totals.totalQuantity} units</p>
             </div>
-            <div>
-              <p class="font-bold">Total Packages:</p>
-              <p>${totals.totalPackages}</p>
-            </div>
           </div>
           
           <div style="margin-top: 20px; text-align: right;">
@@ -4666,10 +4659,6 @@ Thank you for your business!`,
           <div>
             <p class="font-bold">Total Quantity:</p>
             <p>${totals.totalQuantity} units</p>
-          </div>
-          <div>
-            <p class="font-bold">Total Packages:</p>
-            <p>${totals.totalPackages}</p>
           </div>
         </div>
         
@@ -5194,7 +5183,6 @@ Thank you for your business!`,
             <div><strong>Driver:</strong> ${deliveryNoteData.driver || 'N/A'}</div>
             <div><strong>Total Items:</strong> ${deliveryNoteData.totalItems}</div>
             <div><strong>Total Quantity:</strong> ${deliveryNoteData.totalQuantity}</div>
-            <div><strong>Total Packages:</strong> ${deliveryNoteData.totalPackages}</div>
           </div>
           
           <div class="items-table">
@@ -9214,15 +9202,12 @@ Thank you for your business!`,
                         </div>
                         
                         {/* Totals */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="text-sm">
                             <span className="font-bold">Total Items:</span> {totals.totalItems}
                           </div>
                           <div className="text-sm">
                             <span className="font-bold">Total Quantity:</span> {totals.totalQuantity} units
-                          </div>
-                          <div className="text-sm">
-                            <span className="font-bold">Total Packages:</span> {totals.totalPackages}
                           </div>
                         </div>
                         
