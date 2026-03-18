@@ -118,10 +118,10 @@ interface SavedDeliveryNote {
 
 // Initial delivery note data
 const initialDeliveryNoteData: DeliveryNoteData = {
-  businessName: "YOUR BUSINESS NAME",
-  businessAddress: "123 Business Street, City, Country",
-  businessPhone: "+1234567890",
-  businessEmail: "info@yourbusiness.com",
+  businessName: "KILANGO GROUP LTD",
+  businessAddress: "P.O.Box 64, Tanganyika Rd., Muheza - Tanga",
+  businessPhone: "0717 058 266 / 0711 299 266",
+  businessEmail: "kilangogroup1@gmail.com",
   customerName: "Customer Name",
   customerAddress1: "Customer Address Line 1",
   customerAddress2: "Customer Address Line 2",
@@ -908,10 +908,10 @@ Thank you for your business!`,
   ]);
   
   const initialDeliveryNoteData: DeliveryNoteData = {
-    businessName: "YOUR BUSINESS NAME",
-    businessAddress: "123 Business Street, City, Country",
-    businessPhone: "+1234567890",
-    businessEmail: "info@yourbusiness.com",
+    businessName: "KILANGO GROUP LTD",
+    businessAddress: "P.O.Box 64, Tanganyika Rd., Muheza - Tanga",
+    businessPhone: "0717 058 266 / 0711 299 266",
+    businessEmail: "kilangogroup1@gmail.com",
     customerName: "Customer Name",
     customerAddress1: "Customer Address Line 1",
     customerAddress2: "Customer Address Line 2",
